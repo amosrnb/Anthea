@@ -6,6 +6,7 @@ import { CreateWallet } from "./screens/CreateWallet";
 import { ImportWallet } from "./screens/ImportWallet";
 import { Unlock } from "./screens/Unlock";
 import { Home } from "./screens/Home";
+import { Token } from "./screens/Token";
 import { Send } from "./screens/Send";
 import { Receive } from "./screens/Receive";
 import { Settings } from "./screens/Settings";
@@ -56,6 +57,7 @@ export function App() {
         <main className="app-main">
           <Routes>
             <Route path="/home" element={<Home />} />
+            <Route path="/token/:chainId" element={<Token />} />
             <Route path="/send" element={<Send />} />
             <Route path="/receive" element={<Receive />} />
             <Route path="/settings" element={<Settings />} />

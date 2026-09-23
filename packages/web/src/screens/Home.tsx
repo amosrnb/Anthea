@@ -62,7 +62,7 @@ export function Home() {
       <div className={styles.sectionLabel}>Assets</div>
       <div className={styles.assetList}>
         {assets.map((asset) => (
-          <AssetRow key={asset.chainId} asset={asset} onClick={() => navigate(`/send?chain=${asset.chainId}`)} />
+          <AssetRow key={asset.chainId} asset={asset} onClick={() => navigate(`/token/${asset.chainId}`)} />
         ))}
       </div>
     </div>
