@@ -107,7 +107,7 @@ export default function Home() {
             a={ASSETS[c]}
             balance={balances[c]}
             first={i === 0}
-            onPress={() => router.push(`/send-receive?mode=send&chain=${c}`)}
+            onPress={() => router.push(`/token?chain=${c}`)}
           />
         ))}
       </View>
@@ -120,7 +120,7 @@ function AssetRow({ a, balance, first, onPress }: { a: Asset; balance: number; f
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${a.name}, ${formatAmount(balance, a)}, send`}
+      accessibilityLabel={`${a.name}, ${formatAmount(balance, a)}`}
       style={({ pressed }) => [
         styles.row,
         { borderTopColor: first ? 'transparent' : colors.divider },

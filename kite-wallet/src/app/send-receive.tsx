@@ -78,8 +78,13 @@ function SendPane({ chain }: { chain: ChainId }) {
 
   const value = Number(amount.replace(',', '.'));
   const addrError = to && !isValidAddress(chain, to) ? `Enter a valid ${a.name} address.` : null;
-  const amtError =
-    amount && (!(value > 0) ? 'Enter an amount above 0.' : value + a.fee > balance ? `Not enough ${a.symbol} to cover the amount and network fee.` : null);
+  const amtError = amount
+    ? !(value > 0)
+      ? 'Enter an amount above 0.'
+      : value + a.fee > balance
+        ? `Not enough ${a.symbol} to cover the amount and network fee.`
+        : null
+    : null;
   const ready = isValidAddress(chain, to) && value > 0 && value + a.fee <= balance;
 
   const confirm = async () => {
