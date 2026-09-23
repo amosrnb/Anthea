@@ -28,6 +28,7 @@ type WalletState = {
   lock: () => void;
   markBackedUp: () => Promise<void>;
   debit: (chain: ChainId, amount: number) => void;
+  swap: (from: ChainId, to: ChainId, amountIn: number, amountOut: number) => void;
 };
 
 const KEY = 'anthea.vault.v1';
@@ -97,6 +98,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         if (vault) await persist({ ...vault, backedUp: true });
       },
       debit: (chain, amount) => setBalances((b) => ({ ...b, [chain]: Math.max(0, b[chain] - amount) })),
+      swap: (from, to, amountIn, amountOut) =>
+        setBalances((b) => ({ ...b, [from]: Math.max(0, b[from] - amountIn), [to]: b[to] + amountOut })),
     }),
     [status, vault, balances, toast, flash, draft, persist],
   );

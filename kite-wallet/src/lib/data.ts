@@ -1,7 +1,7 @@
 /**
  * Prototype-only data. Anthea V1 is a frontend prototype with no backend and
- * no RPC provider: balances, prices, fees, addresses and transaction broadcast
- * are all mocked here, and the seed phrase is a demo phrase, not real key material.
+ * no RPC or swap provider: balances, prices, swap rates, chart history, fees,
+ * addresses and transaction broadcast are all mocked here, and the seed phrase is a demo phrase, not real key material.
  */
 
 export type ChainId = 'ethereum' | 'solana';
@@ -58,7 +58,9 @@ export function formatUsd(v: number) {
 }
 
 export function formatAmount(v: number, a: Asset) {
-  return `${Number(v.toFixed(a.decimals))} ${a.symbol}`;
+  const n = Number(v.toFixed(a.decimals));
+  // Keep tiny non-zero amounts (e.g. the SOL network fee) from rounding to 0.
+  return `${n === 0 && v > 0 ? Number(v.toPrecision(2)) : n} ${a.symbol}`;
 }
 
 export function shortAddress(addr: string) {
@@ -69,6 +71,11 @@ export function isValidAddress(chain: ChainId, addr: string) {
   const a = addr.trim();
   if (chain === 'ethereum') return /^0x[0-9a-fA-F]{40}$/.test(a);
   return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
+}
+
+/** Mock exchange rate between two assets, from their mock USD prices. */
+export function mockRate(from: ChainId, to: ChainId) {
+  return ASSETS[from].usdPrice / ASSETS[to].usdPrice;
 }
 
 /** Simulates broadcasting a signed transaction. No network call. */
@@ -109,6 +116,48 @@ export function parseMnemonic(input: string): string[] | null {
   if (words.length !== 12 && words.length !== 24) return null;
   if (!words.every((w) => /^[a-z]+$/.test(w))) return null;
   return words;
+}
+
+// Portfolio chart: mocked price history per range.
+export type Range = { label: string; n: number; vol: number; trend: number; delta: string; abs: string };
+
+export const RANGES: Range[] = [
+  { label: '1H', n: 26, vol: 0.5, trend: 0.3, delta: '+0.42%', abs: '+$52.10' },
+  { label: '1D', n: 40, vol: 1, trend: 1.1, delta: '+3.40%', abs: '+$412.20' },
+  { label: '1W', n: 48, vol: 1.4, trend: 2.2, delta: '+8.10%', abs: '+$934.60' },
+  { label: '1M', n: 54, vol: 1.8, trend: 3.4, delta: '-2.60%', abs: '-$328.40' },
+  { label: '1Y', n: 60, vol: 2.4, trend: 6, delta: '+41.8%', abs: '+$3,680.90' },
+  { label: 'Max', n: 64, vol: 3, trend: 9, delta: '+184%', abs: '+$8,042.15' },
+];
+
+export function rangeCaption(label: string) {
+  if (label === 'Max') return 'all time';
+  if (label === '1D') return 'today';
+  return 'past ' + label;
+}
+
+/** Deterministic sample price path, smoothed with quadratic midpoints. Returns line and area paths. */
+export function chartPaths(r: Range, W: number, H: number) {
+  const seed = r.label.charCodeAt(0) + r.n;
+  const vs: number[] = [];
+  for (let i = 0; i < r.n; i++) {
+    const t = i / (r.n - 1);
+    const noise = Math.sin(i * 1.7 + seed) * 0.6 + Math.sin(i * 0.53 + seed * 0.7) * 0.9 + Math.sin(i * 3.1 + seed * 1.3) * 0.28;
+    vs.push(noise * r.vol + t * r.trend * (r.label === '1M' ? -1 : 1));
+  }
+  const lo = Math.min(...vs);
+  const span = Math.max(...vs) - lo || 1;
+  const xy = vs.map((v, i) => ({ x: (i / (r.n - 1)) * W, y: 5 + (1 - (v - lo) / span) * (H - 10) }));
+  const f = (n: number) => n.toFixed(1);
+  let line = `M${f(xy[0].x)} ${f(xy[0].y)}`;
+  for (let i = 1; i < xy.length; i++) {
+    const p0 = xy[i - 1];
+    const p1 = xy[i];
+    line += ` Q${f(p0.x)} ${f(p0.y)} ${f((p0.x + p1.x) / 2)} ${f((p0.y + p1.y) / 2)}`;
+  }
+  const last = xy[xy.length - 1];
+  line += ` L${f(last.x)} ${f(last.y)}`;
+  return { line, area: `${line} L${W} ${H} L0 ${H} Z` };
 }
 
 /** 29×29 decorative QR matrix seeded by the address: finder squares, pseudo-random fill, clear centre for the logo. */

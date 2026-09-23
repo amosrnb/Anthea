@@ -1,12 +1,14 @@
 import { Redirect, router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '../components/Avatar';
+import { BalanceChart } from '../components/BalanceChart';
 import { IconButton } from '../components/Buttons';
 import { Icon, type IconName } from '../components/Icon';
 import { Txt } from '../components/Txt';
-import { ASSETS, CHAINS, formatAmount, formatUsd, type Asset } from '../lib/data';
+import { ASSETS, CHAINS, RANGES, formatAmount, formatUsd, rangeCaption, type Asset } from '../lib/data';
 import { colors } from '../lib/theme';
 import { useWallet } from '../lib/wallet-context';
 
@@ -15,14 +17,18 @@ type Action = { label: string; icon: IconName; primary?: boolean; onPress: () =>
 export default function Home() {
   const insets = useSafeAreaInsets();
   const { status, balances, backedUp, lock } = useWallet();
+  const [rangeLabel, setRangeLabel] = useState('1D');
 
   if (status !== 'unlocked') return <Redirect href="/" />;
 
+  const range = RANGES.find((r) => r.label === rangeLabel) ?? RANGES[1];
+  const down = range.delta.startsWith('-');
   const total = CHAINS.reduce((sum, c) => sum + balances[c] * ASSETS[c].usdPrice, 0);
 
   const actions: Action[] = [
     { label: 'Send', icon: 'send', primary: true, onPress: () => router.push('/send-receive?mode=send') },
     { label: 'Receive', icon: 'receive', onPress: () => router.push('/send-receive?mode=receive') },
+    { label: 'Swap', icon: 'swap', onPress: () => router.push('/swap') },
   ];
 
   const lockNow = () => {
@@ -48,6 +54,12 @@ export default function Home() {
       <View style={styles.balanceCard}>
         <View style={{ alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 2 }}>
           <Txt size={44} weight={900} ls={0.5} tabular style={{ lineHeight: 48 }}>{formatUsd(total)}</Txt>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ backgroundColor: colors.accentTint, borderRadius: 11, paddingVertical: 4, paddingHorizontal: 9 }}>
+              <Txt size={12} tabular color={down ? colors.neg : colors.accentText}>{range.delta}</Txt>
+            </View>
+            <Txt size={12.5} color={colors.muted}>{range.abs} {rangeCaption(range.label)}</Txt>
+          </View>
           {!backedUp && (
             <Pressable
               onPress={() => router.push('/settings/backup')}
@@ -57,6 +69,23 @@ export default function Home() {
               <Txt size={12} color={colors.neg}>Not backed up · Back up now</Txt>
             </Pressable>
           )}
+        </View>
+        <BalanceChart range={range} />
+        <View style={styles.ranges}>
+          {RANGES.map((r) => {
+            const on = r.label === rangeLabel;
+            return (
+              <Pressable
+                key={r.label}
+                onPress={() => setRangeLabel(r.label)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                style={[styles.range, on && styles.rangeOn]}
+              >
+                <Txt size={12} tabular color={on ? colors.ink : colors.muted}>{r.label}</Txt>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
@@ -123,6 +152,16 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, paddingHorizontal: 18 },
   account: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 18, paddingVertical: 6, paddingLeft: 6, paddingRight: 14 },
   balanceCard: { marginTop: 18, marginHorizontal: 16, paddingTop: 22, paddingHorizontal: 22, paddingBottom: 18 },
+  ranges: { flexDirection: 'row', gap: 5, marginTop: 14, padding: 4 },
+  range: { flex: 1, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  rangeOn: {
+    backgroundColor: '#2A2A32',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
   actions: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: 12, paddingHorizontal: 16 },
   action: { width: 80, alignItems: 'center', gap: 9 },
   actionCircle: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center' },
