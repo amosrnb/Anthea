@@ -84,6 +84,7 @@ export default function Token() {
 
       <View style={styles.actions}>
         <Cta label="Send" style={{ flex: 1 }} onPress={() => router.push(`/send-receive?mode=send&chain=${chain}`)} />
+        <Cta label="Swap" variant="secondary" style={{ flex: 1 }} onPress={() => router.push('/swap')} />
         <Cta label="Receive" variant="secondary" style={{ flex: 1 }} onPress={() => router.push(`/send-receive?mode=receive&chain=${chain}`)} />
       </View>
     </ScrollView>
