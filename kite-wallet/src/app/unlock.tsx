@@ -12,12 +12,17 @@ export default function Unlock() {
   const { status, unlock } = useWallet();
   const [pw, setPw] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   if (status === 'none') return <Redirect href="/" />;
   if (status === 'unlocked') return <Redirect href="/home" />;
 
-  const submit = () => {
-    if (unlock(pw)) {
+  const submit = async () => {
+    if (busy || !pw) return;
+    setBusy(true);
+    const ok = await unlock(pw);
+    setBusy(false);
+    if (ok) {
       router.replace('/home');
       return;
     }
@@ -31,7 +36,7 @@ export default function Unlock() {
       sub="Enter the password you set on this device."
       footer={
         <>
-          <Cta label="Unlock" onPress={submit} disabled={!pw} />
+          <Cta label="Unlock" onPress={submit} disabled={!pw || busy} />
           <View style={{ alignItems: 'center', paddingTop: 4 }}>
             <Pressable onPress={() => router.push('/import')} accessibilityRole="button" hitSlop={8}>
               <Txt size={13} color={colors.accentText}>Forgot password? Restore with seed phrase</Txt>

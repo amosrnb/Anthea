@@ -32,7 +32,7 @@ export default function CreateBackup() {
     >
       <MnemonicGrid words={draft.mnemonic} />
       <Txt size={13} lh={1.6} color={colors.muted} style={{ marginTop: 16, marginHorizontal: 4 }}>
-        Never share it. Anyone with these words can take your funds. Demo phrase: this prototype does not create real keys.
+        Never share it. Anyone with these words can take your funds.
       </Txt>
     </FlowScreen>
   );

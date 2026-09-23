@@ -1,5 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, useLocalSearchParams } from 'expo-router';
+import QRCode from 'qrcode';
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +15,6 @@ import {
   formatAmount,
   formatUsd,
   isValidAddress,
-  qrMatrix,
   shortAddress,
   simulateBroadcast,
   type ChainId,
@@ -198,12 +198,14 @@ function SendPane({ chain }: { chain: ChainId }) {
 }
 
 function ReceivePane({ chain }: { chain: ChainId }) {
-  const { flash } = useWallet();
+  const { flash, addresses } = useWallet();
   const a = ASSETS[chain];
-  const cells = useMemo(() => qrMatrix(a.address), [a.address]);
+  const address = addresses[chain];
+  // High error correction so the logo in the centre doesn't stop it scanning.
+  const qr = useMemo(() => QRCode.create(address, { errorCorrectionLevel: 'H' }).modules, [address]);
 
   const copy = async () => {
-    await Clipboard.setStringAsync(a.address);
+    await Clipboard.setStringAsync(address);
     flash('Address copied');
   };
 
@@ -211,14 +213,16 @@ function ReceivePane({ chain }: { chain: ChainId }) {
     <View style={{ flex: 1, alignItems: 'center', paddingTop: 8, paddingHorizontal: 16 }}>
       <View style={{ width: '100%', padding: 20, alignItems: 'center' }}>
         <View style={styles.qr}>
-          <Svg width={222} height={222} viewBox="0 0 29 29">
-            {cells.map((dark, i) => (dark ? <Rect key={i} x={i % 29} y={Math.floor(i / 29)} width={1.02} height={1.02} fill="#000000" /> : null))}
+          <Svg width={222} height={222} viewBox={`0 0 ${qr.size} ${qr.size}`}>
+            {Array.from(qr.data, (dark, i) =>
+              dark ? <Rect key={i} x={i % qr.size} y={Math.floor(i / qr.size)} width={1.02} height={1.02} fill="#000000" /> : null,
+            )}
           </Svg>
           <View style={styles.qrLogo}>
             <View style={{ width: 18, height: 18, borderRadius: 6, backgroundColor: colors.white }} />
           </View>
         </View>
-        <Txt size={18} tabular style={{ marginTop: 20 }}>{shortAddress(a.address)}</Txt>
+        <Txt size={18} tabular style={{ marginTop: 20 }}>{shortAddress(address)}</Txt>
         <Txt size={12.5} color={colors.muted} style={{ marginTop: 6 }}>{a.network}</Txt>
       </View>
       <Txt size={13} lh={1.6} color={colors.muted} style={{ marginTop: 16, marginHorizontal: 4, textAlign: 'center' }}>

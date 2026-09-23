@@ -1,9 +1,9 @@
+import { normalizeMnemonic, validateMnemonic } from '@anthea/wallet-core';
 import { router } from 'expo-router';
 import { useState } from 'react';
 
 import { Cta } from '../components/Buttons';
 import { Field, FlowScreen } from '../components/Flow';
-import { parseMnemonic } from '../lib/data';
 import { passwordError } from '../lib/password';
 import { useWallet } from '../lib/wallet-context';
 
@@ -14,13 +14,18 @@ export default function ImportWallet() {
   const [confirm, setConfirm] = useState('');
   const [touched, setTouched] = useState(false);
 
-  const words = parseMnemonic(phrase);
-  const phraseError = words ? null : 'Enter 12 or 24 words separated by spaces.';
+  const words = phrase.trim() ? normalizeMnemonic(phrase).split(' ') : [];
+  const phraseError =
+    words.length !== 12 && words.length !== 24
+      ? 'Enter 12 or 24 words separated by spaces.'
+      : validateMnemonic(phrase)
+        ? null
+        : "That isn't a valid seed phrase. Check each word and its order.";
   const pwError = passwordError(pw, confirm);
 
   const submit = async () => {
     setTouched(true);
-    if (!words || pwError) return;
+    if (phraseError || pwError) return;
     await saveVault(words, pw, true);
     router.dismissAll();
     router.replace('/home');

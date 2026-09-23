@@ -162,7 +162,8 @@ function pickPositions(n: number) {
 }
 
 function optionsFor(words: string[], pos: number) {
-  const others = words.filter((_, i) => i !== pos).sort(() => Math.random() - 0.5).slice(0, 3);
+  // Real seed phrases can repeat a word, so keep the choices unique.
+  const others = [...new Set(words.filter((w) => w !== words[pos]))].sort(() => Math.random() - 0.5).slice(0, 3);
   return [words[pos], ...others].sort(() => Math.random() - 0.5);
 }
 
