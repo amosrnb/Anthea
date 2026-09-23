@@ -1,10 +1,10 @@
 /**
- * Encrypted local vault: persists every wallet's (encrypted) mnemonic to
- * IndexedDB under one password. Only the decrypted vault ever lives in
+ * Encrypted local vault: persists every wallet's (encrypted) mnemonic to the
+ * configured vault storage (IndexedDB by default) under one password. Only the decrypted vault ever lives in
  * memory, and only while unlocked.
  */
 import { type EncryptedPayload, decryptWithPassword, encryptWithPassword } from "./crypto.js";
-import { idbDelete, idbGet, idbSet } from "./storage/indexeddb.js";
+import { getVaultStorage } from "./storage/storage.js";
 
 const VAULT_KEY = "vault";
 const VAULT_FORMAT_VERSION = 1;
@@ -27,7 +27,7 @@ interface VaultRecord extends EncryptedPayload {
 
 /** Whether an encrypted vault already exists on this device. */
 export async function keystoreExists(): Promise<boolean> {
-  const record = await idbGet<VaultRecord>(VAULT_KEY);
+  const record = await getVaultStorage().get<VaultRecord>(VAULT_KEY);
   return record !== undefined;
 }
 
@@ -43,7 +43,7 @@ export async function createVault(password: string): Promise<VaultContents> {
 
 /** Decrypt and parse the persisted vault. Throws if none exists or the password is wrong. */
 export async function readVault(password: string): Promise<VaultContents> {
-  const record = await idbGet<VaultRecord>(VAULT_KEY);
+  const record = await getVaultStorage().get<VaultRecord>(VAULT_KEY);
   if (!record) {
     throw new Error("No wallet vault found on this device");
   }
@@ -58,12 +58,12 @@ export async function readVault(password: string): Promise<VaultContents> {
 export async function writeVault(contents: VaultContents, password: string): Promise<void> {
   const payload = await encryptWithPassword(JSON.stringify(contents), password);
   const record: VaultRecord = { ...payload, version: VAULT_FORMAT_VERSION };
-  await idbSet(VAULT_KEY, record);
+  await getVaultStorage().set(VAULT_KEY, record);
 }
 
 /** Permanently delete the local vault. This does not affect on-chain funds, only local access. */
 export async function deleteVault(): Promise<void> {
-  await idbDelete(VAULT_KEY);
+  await getVaultStorage().delete(VAULT_KEY);
 }
 
 export type { VaultContents };

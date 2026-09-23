@@ -23,6 +23,12 @@ describe("ethereum chain adapter", () => {
     expect(first.address).not.toBe(second.address);
   });
 
+  it("derives the well-known address for the standard BIP39 test mnemonic", () => {
+    const mnemonic =
+      "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    expect(deriveEthereumAccount(mnemonic, 0).address).toBe("0x9858EfFD232B4033E47d90003D41EC34EcaEda94");
+  });
+
   it("derives different addresses from different mnemonics", () => {
     const a = deriveEthereumAccount(generateMnemonic(), 0);
     const b = deriveEthereumAccount(generateMnemonic(), 0);

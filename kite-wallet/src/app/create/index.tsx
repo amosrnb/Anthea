@@ -3,12 +3,11 @@ import { useState } from 'react';
 
 import { Cta } from '../../components/Buttons';
 import { Field, FlowScreen } from '../../components/Flow';
-import { demoMnemonic } from '../../lib/data';
 import { passwordError } from '../../lib/password';
 import { useWallet } from '../../lib/wallet-context';
 
 export default function CreatePassword() {
-  const { setDraft } = useWallet();
+  const { setDraft, newMnemonic } = useWallet();
   const [pw, setPw] = useState('');
   const [confirm, setConfirm] = useState('');
   const [touched, setTouched] = useState(false);
@@ -17,7 +16,7 @@ export default function CreatePassword() {
   const next = () => {
     setTouched(true);
     if (error) return;
-    setDraft({ mnemonic: demoMnemonic(), password: pw });
+    setDraft({ mnemonic: newMnemonic(), password: pw });
     router.push('/create/backup');
   };
 

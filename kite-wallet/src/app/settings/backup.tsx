@@ -14,11 +14,16 @@ export default function Backup() {
   const [step, setStep] = useState<Step>('password');
   const [pw, setPw] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   if (status !== 'unlocked') return <Redirect href="/" />;
 
-  const reveal = () => {
-    if (!checkPassword(pw)) {
+  const reveal = async () => {
+    if (busy || !pw) return;
+    setBusy(true);
+    const ok = await checkPassword(pw);
+    setBusy(false);
+    if (!ok) {
       setError('Wrong password. Try again.');
       return;
     }
@@ -38,7 +43,7 @@ export default function Backup() {
         title="Backup & recovery"
         sub="Enter your password to show your seed phrase. Make sure no one can see your screen."
         onBack={() => router.back()}
-        footer={<Cta label="Show seed phrase" onPress={reveal} disabled={!pw} />}
+        footer={<Cta label="Show seed phrase" onPress={reveal} disabled={!pw || busy} />}
       >
         <Field
           label="PASSWORD"
