@@ -1,20 +1,17 @@
 import { BlurView } from 'expo-blur';
-import { usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useWallet } from '../lib/wallet-context';
 import { colors } from '../lib/theme';
-import { DOCK_HEIGHT, dockBottom } from './Dock';
 import { Icon } from './Icon';
 import { Txt } from './Txt';
 
-/** App-wide confirmation toast. Sits above the dock on Home, above the bottom CTA elsewhere. */
+/** App-wide confirmation toast, anchored above the bottom call to action. */
 export function Toast() {
   const { toast } = useWallet();
   const insets = useSafeAreaInsets();
-  const path = usePathname();
   const anim = useState(() => new Animated.Value(0))[0];
 
   useEffect(() => {
@@ -25,7 +22,7 @@ export function Toast() {
 
   if (!toast) return null;
 
-  const bottom = path === '/home' ? dockBottom(insets.bottom) + DOCK_HEIGHT + 12 : Math.max(insets.bottom, 30);
+  const bottom = Math.max(insets.bottom, 30);
 
   return (
     <Animated.View

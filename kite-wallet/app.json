@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Kite Wallet",
-    "slug": "kite-wallet",
+    "name": "Anthea",
+    "slug": "anthea",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.kite.wallet"
+      "bundleIdentifier": "com.anthea.wallet"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.kite.wallet"
+      "package": "com.anthea.wallet"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,7 +36,7 @@
         }
       ]
     ],
-    "scheme": "kitewallet",
+    "scheme": "anthea",
     "backgroundColor": "#000000"
   }
 }

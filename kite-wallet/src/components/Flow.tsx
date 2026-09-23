@@ -169,6 +169,7 @@ function optionsFor(words: string[], pos: number) {
 const styles = StyleSheet.create({
   input: {
     minHeight: 56,
+    outlineWidth: 0,
     borderRadius: 20,
     backgroundColor: colors.raised,
     paddingHorizontal: 16,
