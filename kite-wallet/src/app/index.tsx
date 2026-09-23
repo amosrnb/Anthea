@@ -1,13 +1,10 @@
-import { BlurView } from 'expo-blur';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Animated, Easing, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Cta, Swatch } from '../components/Buttons';
-import { Icon } from '../components/Icon';
+import { Cta } from '../components/Buttons';
 import { Txt } from '../components/Txt';
-import { IMPORT_OPTIONS } from '../lib/data';
 import { colors } from '../lib/theme';
 import { useWallet } from '../lib/wallet-context';
 
@@ -55,22 +52,10 @@ function FloatingBlob({ b }: { b: Blob }) {
 
 export default function Onboarding() {
   const insets = useSafeAreaInsets();
-  const { flash } = useWallet();
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const rise = useState(() => new Animated.Value(0))[0];
+  const { status } = useWallet();
 
-  useEffect(() => {
-    if (!sheetOpen) return;
-    rise.setValue(0);
-    Animated.timing(rise, { toValue: 1, duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start();
-  }, [sheetOpen, rise]);
-
-  const create = () => router.replace('/home');
-  const importWallet = () => {
-    setSheetOpen(false);
-    router.replace('/home');
-    flash('Wallet imported');
-  };
+  if (status === 'locked') return <Redirect href="/unlock" />;
+  if (status === 'unlocked') return <Redirect href="/home" />;
 
   return (
     <View style={{ flex: 1, paddingTop: insets.top }}>
@@ -83,80 +68,18 @@ export default function Onboarding() {
           Everything you hold, in one view.
         </Txt>
         <Txt size={15.5} lh={1.55} color={colors.muted} style={{ marginTop: 16, maxWidth: 300 }}>
-          Tokens, positions and markets together. Keys stay on your device.
+          Ethereum and Solana in one wallet. Keys stay on your device.
         </Txt>
       </View>
 
       <View style={{ marginTop: 'auto', paddingHorizontal: 16, paddingBottom: Math.max(insets.bottom, 34), gap: 10 }}>
-        <Cta label="Create a new wallet" onPress={create} />
-        <Cta label="Add an existing wallet" variant="secondary" onPress={() => setSheetOpen(true)} />
+        <Cta label="Create a new wallet" onPress={() => router.push('/create')} />
+        <Cta label="Add an existing wallet" variant="secondary" onPress={() => router.push('/import')} />
       </View>
-
-      {sheetOpen && (
-        <>
-          <Pressable style={[StyleSheet.absoluteFill, { zIndex: 25 }]} onPress={() => setSheetOpen(false)} accessibilityLabel="Close">
-            <BlurView intensity={8} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,.5)' }]} />
-          </Pressable>
-          <Animated.View
-            style={[
-              styles.sheet,
-              {
-                bottom: 8,
-                paddingBottom: insets.bottom > 0 ? 51 : 26,
-                transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [420, 0] }) }],
-              },
-            ]}
-          >
-            <View style={{ alignItems: 'center' }}>
-              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,.2)' }} />
-            </View>
-            <Txt size={22} weight={900} ls={-0.7} style={{ marginTop: 16, marginHorizontal: 4, marginBottom: 4 }} accessibilityRole="header">
-              Add an existing wallet
-            </Txt>
-            <Txt size={13.5} lh={1.5} color={colors.muted} style={{ marginHorizontal: 4 }}>
-              Choose how you&apos;d like to import into Kite.
-            </Txt>
-            <View style={{ marginTop: 16, gap: 8 }}>
-              {IMPORT_OPTIONS.map((o) => (
-                <Pressable
-                  key={o.title}
-                  onPress={importWallet}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [styles.option, { backgroundColor: pressed ? colors.raisedPressed : colors.raised }]}
-                >
-                  <Swatch size={38} radius={13} color={o.color} />
-                  <View style={{ flex: 1 }}>
-                    <Txt size={15.5}>{o.title}</Txt>
-                    <Txt size={12.5} lh={1.4} color={colors.muted} style={{ marginTop: 2 }}>{o.sub}</Txt>
-                  </View>
-                  <Icon name="chevronRight" size={13} color="rgba(247,247,245,.35)" strokeWidth={2} />
-                </Pressable>
-              ))}
-            </View>
-          </Animated.View>
-        </>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   stage: { width: 390, height: 300, marginTop: 16, alignSelf: 'center' },
-  sheet: {
-    position: 'absolute',
-    left: 8,
-    right: 8,
-    zIndex: 26,
-    backgroundColor: '#0A0A0C',
-    borderRadius: 34,
-    paddingTop: 22,
-    paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.6,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: -18 },
-    elevation: 20,
-  },
-  option: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 20 },
 });

@@ -1,113 +1,120 @@
-import { colors } from './theme';
+/**
+ * Prototype-only data. Anthea V1 is a frontend prototype with no backend and
+ * no RPC provider: balances, prices, fees, addresses and transaction broadcast
+ * are all mocked here, and the seed phrase is a demo phrase, not real key material.
+ */
 
-export const BALANCE = '$12,480.55';
-export const WALLET_TOTAL = '$12,826.92';
-export const USDC_BALANCE = 2683.1;
-export const USDC_TO_WBTC = 0.0000152;
-export const RECIPIENT = 'mira.kite';
-export const RECEIVE_ADDRESS = '0xB4a2…9Fc1';
+export type ChainId = 'ethereum' | 'solana';
 
-export type HoldingKind = 'Tokens' | 'Positions' | 'Predictions';
-
-export type Holding = {
-  kind: HoldingKind;
+export type Asset = {
+  chainId: ChainId;
+  symbol: string;
+  name: string;
+  network: string;
   mark: string;
   markBg: string;
   markInk: string;
-  name: string;
-  tag: string;
-  sub: string;
-  usd: string;
-  chg: string;
-  up: boolean;
+  usdPrice: number;
+  decimals: number;
+  address: string;
+  fee: number;
 };
 
-export const HOLDINGS: Holding[] = [
-  { kind: 'Tokens', mark: 'B', markBg: '#D8862A', markInk: '#1A0E00', name: 'Wrapped Bitcoin', tag: 'BASE', sub: '0.05188 WBTC', usd: '$3,289.79', chg: '+2.18%', up: true },
-  { kind: 'Tokens', mark: '$', markBg: '#4B7BE5', markInk: '#FFFFFF', name: 'USD Coin', tag: 'ETH', sub: '2,683.10 USDC', usd: '$2,683.10', chg: '+0.01%', up: true },
-  { kind: 'Tokens', mark: 'E', markBg: '#5B5BC4', markInk: '#FFFFFF', name: 'Ethereum', tag: 'ETH', sub: '1.842 ETH', usd: '$5,782.44', chg: '-1.24%', up: false },
-  { kind: 'Positions', mark: '100', markBg: '#3A2126', markInk: colors.neg, name: 'Nasdaq 100', tag: 'SHORT 10×', sub: 'Entry $7,180.40', usd: '$412.60', chg: '+9.42%', up: true },
-  { kind: 'Positions', mark: 'AU', markBg: '#3A3322', markInk: '#E8C46A', name: 'Gold', tag: 'LONG 3×', sub: 'Entry $3,379.10', usd: '$204.15', chg: '-0.60%', up: false },
-  { kind: 'Predictions', mark: '?', markBg: '#1F2A1A', markInk: colors.accentText, name: 'Rain in Lisbon', tag: 'OCT', sub: 'Weather · 62¢ yes', usd: '$92.18', chg: '-$4.02', up: false },
-];
+export const ASSETS: Record<ChainId, Asset> = {
+  ethereum: {
+    chainId: 'ethereum',
+    symbol: 'ETH',
+    name: 'Ethereum',
+    network: 'Ethereum mainnet',
+    mark: 'E',
+    markBg: '#5B5BC4',
+    markInk: '#FFFFFF',
+    usdPrice: 3138.72,
+    decimals: 6,
+    address: '0xB4a27c1E90d35f6A2b8C44e1D07F3a9e5c2D9Fc1',
+    fee: 0.0009,
+  },
+  solana: {
+    chainId: 'solana',
+    symbol: 'SOL',
+    name: 'Solana',
+    network: 'Solana mainnet',
+    mark: 'S',
+    markBg: '#A8E6A8',
+    markInk: '#0B1A0B',
+    usdPrice: 145.6,
+    decimals: 4,
+    address: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+    fee: 0.000005,
+  },
+};
 
-export const FILTERS = ['All', 'Tokens', 'Positions', 'Predictions'] as const;
-export type Filter = (typeof FILTERS)[number];
+export const CHAINS: ChainId[] = ['ethereum', 'solana'];
 
-export type Wallet = { name: string; handle: string; color: string; bal: string; addr: string; state: string };
+export const START_BALANCES: Record<ChainId, number> = { ethereum: 1.842, solana: 18.41 };
 
-export const WALLETS: Wallet[] = [
-  { name: 'Main', handle: 'ava.kite', color: '#6C5CE7', bal: '$8,412.20', addr: '0xB4a2…9Fc1', state: 'LEDGER' },
-  { name: 'Family', handle: 'family.kite', color: '#B9C6D6', bal: '$1,204.55', addr: '0x71c9…04Ae', state: 'SHARED' },
-  { name: 'Savings', handle: 'save.kite', color: '#A8E6A8', bal: '$2,140.00', addr: '0x2fD1…77b3', state: 'COLD' },
-  { name: 'Spending', handle: 'spend.kite', color: '#4B7BE5', bal: '$318.90', addr: '0x9aE4…12cD', state: 'HOT' },
-  { name: 'Gifts', handle: 'gifts.kite', color: '#D8862A', bal: '$96.40', addr: '0x6b02…Ba90', state: 'HOT' },
-  { name: 'Lunch', handle: 'lunch.kite', color: '#E2B7C8', bal: '$41.12', addr: '0xF14c…3e77', state: 'HOT' },
-  { name: 'Trading', handle: 'trade.kite', color: '#FF8F80', bal: '$612.75', addr: '0x0Dd8…5A1f', state: 'HOT' },
-];
-
-export const IMPORT_OPTIONS = [
-  { title: 'Seed phrase', sub: 'Import with a 12 or 24 word phrase.', color: '#6C5CE7' },
-  { title: 'Watch an address', sub: 'Track any address or .kite name.', color: '#B9C6D6' },
-  { title: 'Hardware wallet', sub: 'Connect a signing device over USB.', color: '#4B7BE5' },
-];
-
-export const NFT_COLORS = ['#6C5CE7', '#A8E6A8', '#E2B7C8', '#D8862A', '#B9C6D6', '#E8C46A'];
-
-/** 7×7 pixel-art avatar mask; 1 = white pixel. */
-export const AVATAR = [
-  0, 1, 1, 1, 1, 1, 0,
-  1, 1, 1, 1, 1, 1, 1,
-  1, 0, 1, 1, 0, 1, 1,
-  1, 1, 1, 1, 1, 1, 1,
-  1, 1, 0, 0, 0, 1, 1,
-  0, 1, 1, 1, 1, 1, 0,
-  0, 0, 1, 1, 1, 0, 0,
-];
-
-export type Range = { label: string; n: number; vol: number; trend: number; delta: string; abs: string };
-
-export const RANGES: Range[] = [
-  { label: '1H', n: 26, vol: 0.5, trend: 0.3, delta: '+0.42%', abs: '+$52.10' },
-  { label: '1D', n: 40, vol: 1, trend: 1.1, delta: '+3.40%', abs: '+$412.20' },
-  { label: '1W', n: 48, vol: 1.4, trend: 2.2, delta: '+8.10%', abs: '+$934.60' },
-  { label: '1M', n: 54, vol: 1.8, trend: 3.4, delta: '-2.60%', abs: '-$328.40' },
-  { label: '1Y', n: 60, vol: 2.4, trend: 6, delta: '+41.8%', abs: '+$3,680.90' },
-  { label: 'Max', n: 64, vol: 3, trend: 9, delta: '+184%', abs: '+$8,042.15' },
-];
-
-export function rangeCaption(label: string) {
-  if (label === 'Max') return 'all time';
-  if (label === '1D') return 'today';
-  return 'past ' + label;
+export function formatUsd(v: number) {
+  return v.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-/** Deterministic sample price path, smoothed with quadratic midpoints. Returns line and area paths. */
-export function chartPaths(r: Range, W: number, H: number) {
-  const seed = r.label.charCodeAt(0) + r.n;
-  const vs: number[] = [];
-  for (let i = 0; i < r.n; i++) {
-    const t = i / (r.n - 1);
-    const noise = Math.sin(i * 1.7 + seed) * 0.6 + Math.sin(i * 0.53 + seed * 0.7) * 0.9 + Math.sin(i * 3.1 + seed * 1.3) * 0.28;
-    vs.push(noise * r.vol + t * r.trend * (r.label === '1M' ? -1 : 1));
-  }
-  const lo = Math.min(...vs);
-  const span = Math.max(...vs) - lo || 1;
-  const xy = vs.map((v, i) => ({ x: (i / (r.n - 1)) * W, y: 5 + (1 - (v - lo) / span) * (H - 10) }));
-  const f = (n: number) => n.toFixed(1);
-  let line = `M${f(xy[0].x)} ${f(xy[0].y)}`;
-  for (let i = 1; i < xy.length; i++) {
-    const p0 = xy[i - 1];
-    const p1 = xy[i];
-    line += ` Q${f(p0.x)} ${f(p0.y)} ${f((p0.x + p1.x) / 2)} ${f((p0.y + p1.y) / 2)}`;
-  }
-  const last = xy[xy.length - 1];
-  line += ` L${f(last.x)} ${f(last.y)}`;
-  return { line, area: `${line} L${W} ${H} L0 ${H} Z` };
+export function formatAmount(v: number, a: Asset) {
+  return `${Number(v.toFixed(a.decimals))} ${a.symbol}`;
 }
 
-/** 29×29 decorative QR matrix: three finder squares, pseudo-random fill, clear centre for the logo. */
-export function qrMatrix(N = 29): boolean[] {
+export function shortAddress(addr: string) {
+  return addr.slice(0, 6) + '…' + addr.slice(-4);
+}
+
+export function isValidAddress(chain: ChainId, addr: string) {
+  const a = addr.trim();
+  if (chain === 'ethereum') return /^0x[0-9a-fA-F]{40}$/.test(a);
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
+}
+
+/** Simulates broadcasting a signed transaction. No network call. */
+export function simulateBroadcast(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 900));
+}
+
+// Words from the BIP39 English list, used only to build a demo phrase.
+const WORDS = (
+  'abandon ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid ' +
+  'acoustic acquire across act action actor actress actual adapt add addict address adjust admit adult advance ' +
+  'advice aerobic affair afford afraid again age agent agree ahead aim air airport aisle alarm album alcohol alert ' +
+  'alien all alley allow almost alone alpha already also alter always amateur amazing among amount amused analyst ' +
+  'anchor ancient anger angle angry animal ankle announce annual another answer antenna antique anxiety any apart ' +
+  'apology appear apple approve april arch arctic area arena argue arm armed armor army around arrange arrest ' +
+  'arrive arrow art artefact artist artwork ask aspect assault asset assist assume asthma athlete atom attack ' +
+  'attend attitude attract auction audit august aunt author auto autumn average avocado avoid awake aware away ' +
+  'awesome awful awkward axis baby bachelor bacon badge bag balance balcony ball bamboo banana banner bar barely ' +
+  'bargain barrel base basic basket battle beach bean beauty because become beef before begin behave behind ' +
+  'believe below belt bench benefit best betray better between beyond bicycle bid bike bind biology bird birth ' +
+  'bitter black blade blame blanket blast bleak bless blind blood blossom blouse blue blur blush board boat'
+).split(' ');
+
+export const WORDLIST = WORDS;
+
+/** Demo 12-word phrase. Not generated from real entropy and not usable as a real wallet. */
+export function demoMnemonic(): string[] {
+  const picked: string[] = [];
+  while (picked.length < 12) {
+    const w = WORDS[Math.floor(Math.random() * WORDS.length)];
+    if (!picked.includes(w)) picked.push(w);
+  }
+  return picked;
+}
+
+export function parseMnemonic(input: string): string[] | null {
+  const words = input.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length !== 12 && words.length !== 24) return null;
+  if (!words.every((w) => /^[a-z]+$/.test(w))) return null;
+  return words;
+}
+
+/** 29×29 decorative QR matrix seeded by the address: finder squares, pseudo-random fill, clear centre for the logo. */
+export function qrMatrix(seedText: string, N = 29): boolean[] {
+  let seed = 0;
+  for (let i = 0; i < seedText.length; i++) seed = (seed * 31 + seedText.charCodeAt(i)) % 9973;
   const cells: boolean[] = [];
   const finder = (r: number, c: number) => {
     for (const [r0, c0] of [[0, 0], [0, N - 7], [N - 7, 0]]) {
@@ -127,9 +134,20 @@ export function qrMatrix(N = 29): boolean[] {
         continue;
       }
       const mid = r > 10 && r < 18 && c > 10 && c < 18;
-      const h = Math.sin(r * 12.9898 + c * 78.233) * 43758.5453;
+      const h = Math.sin(r * 12.9898 + c * 78.233 + seed) * 43758.5453;
       cells.push(!mid && h - Math.floor(h) > 0.48);
     }
   }
   return cells;
 }
+
+/** 7×7 pixel-art avatar mask; 1 = white pixel. */
+export const AVATAR = [
+  0, 1, 1, 1, 1, 1, 0,
+  1, 1, 1, 1, 1, 1, 1,
+  1, 0, 1, 1, 0, 1, 1,
+  1, 1, 1, 1, 1, 1, 1,
+  1, 1, 0, 0, 0, 1, 1,
+  0, 1, 1, 1, 1, 1, 0,
+  0, 0, 1, 1, 1, 0, 0,
+];
