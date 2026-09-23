@@ -20,7 +20,7 @@
 
 .actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-3);
 }
 
@@ -41,11 +41,6 @@
 .actionButton.send {
   background: var(--color-brand);
   color: var(--color-brand-contrast);
-}
-
-.actionButton.swap {
-  background: var(--color-surface-raised);
-  color: var(--color-text);
 }
 
 .actionIcon {

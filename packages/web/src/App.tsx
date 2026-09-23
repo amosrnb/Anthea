@@ -7,7 +7,6 @@ import { ImportWallet } from "./screens/ImportWallet";
 import { Unlock } from "./screens/Unlock";
 import { Home } from "./screens/Home";
 import { Send } from "./screens/Send";
-import { Swap } from "./screens/Swap";
 import { Receive } from "./screens/Receive";
 import { Settings } from "./screens/Settings";
 import { Backup } from "./screens/Backup";
@@ -58,7 +57,6 @@ export function App() {
           <Routes>
             <Route path="/home" element={<Home />} />
             <Route path="/send" element={<Send />} />
-            <Route path="/swap" element={<Swap />} />
             <Route path="/receive" element={<Receive />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/settings/backup" element={<Backup />} />

@@ -57,12 +57,6 @@ export function Home() {
           </span>
           Send
         </button>
-        <button type="button" className={`${styles.actionButton} ${styles.swap}`} onClick={() => navigate("/swap")}>
-          <span className={styles.actionIcon}>
-            <SwapIcon />
-          </span>
-          Swap
-        </button>
       </div>
 
       <div className={styles.sectionLabel}>Assets</div>
@@ -79,20 +73,6 @@ function SendIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function SwapIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M7 20V5m0 0L3.5 8.5M7 5l3.5 3.5M17 4v15m0 0 3.5-3.5M17 19l-3.5-3.5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
     </svg>
   );
 }
