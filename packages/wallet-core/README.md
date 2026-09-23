@@ -6,7 +6,7 @@ local key storage, client-side signing, and direct on-chain RPC reads/writes
 
 Built per the corrected Anthea V1 Technical Scope (ANT-2, revised
 2026-09-20): TypeScript, **Ethereum + Solana** (two different curves —
-secp256k1 via viem, ed25519 via `@solana/web3.js`), BIP39/BIP44
+secp256k1 via viem, ed25519 via `@noble/curves` with RPC via `@solana/web3.js`), BIP39/BIP44
 (`m/44'/60'/0'/0/{account}` for Ethereum, `m/44'/501'/{account}'/0'` for
 Solana), IndexedDB + PBKDF2/AES-GCM encrypted storage, and **multi-wallet /
 multi-account** support. Native asset only for V1 (ETH, SOL) — no ERC-20/SPL
@@ -22,8 +22,13 @@ token support.
   one vault encrypted with a key derived from the user's password via
   PBKDF2-SHA256 (600,000 iterations) and AES-256-GCM, using only the
   platform Web Crypto API — no bespoke crypto.
-- Persisted in IndexedDB (not `localStorage`), origin-isolated, as a single
-  ciphertext blob plus its (non-secret) salt/IV/iteration count.
+- Persisted as a single ciphertext blob plus its (non-secret)
+  salt/IV/iteration count. Browsers use IndexedDB (not `localStorage`),
+  origin-isolated, by default; other platforms plug in their own store with
+  `setVaultStorage()` (the Expo app uses the iOS Keychain / Android Keystore).
+- Runs anywhere with a standard `globalThis.crypto` (WebCrypto): browsers,
+  Node, and React Native with a native WebCrypto such as
+  `react-native-quick-crypto` installed before this package is loaded.
 - Sends validate the recipient address and a positive amount before any
   signing happens, on both chains.
 - `WalletManager.createWallet()` / `Wallet.generate()` expose the raw
@@ -116,7 +121,7 @@ Tests use `vitest` with `fake-indexeddb` (no real browser or live RPC
 required — send/balance tests only cover input validation that fails
 closed before any network call, per chain adapter).
 
-**Note for the frontend integration (ANT-5):** `ed25519-hd-key` (Solana key
-derivation) uses Node's `Buffer` internally. Bundle with a `Buffer` polyfill
-(e.g. `vite-plugin-node-polyfills`) — a common requirement for
-`@solana/web3.js`-based web apps generally, not specific to this package.
+Key derivation and signing are pure JS (`@noble/*`, `@scure/*`) and need no
+Node built-ins. `@solana/web3.js` is loaded lazily, only for Solana RPC calls
+(`getNativeBalance`/`sendNative`); in a browser it still expects a `Buffer`
+polyfill (e.g. `vite-plugin-node-polyfills`, as `packages/web` does).

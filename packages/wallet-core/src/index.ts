@@ -6,6 +6,8 @@ export { WalletManager } from "./wallet-manager.js";
 export type { WalletSummary } from "./wallet-manager.js";
 
 export { keystoreExists } from "./keystore.js";
+export { setVaultStorage } from "./storage/storage.js";
+export type { VaultStorage } from "./storage/storage.js";
 
 export {
   EthereumAccount,
@@ -20,6 +22,7 @@ export {
   SOLANA_DECIMALS,
   SOLANA_DEFAULT_RPC,
 } from "./chains/solana.js";
+export type { SolanaKeypair } from "./chains/solana.js";
 export { CHAIN_IDS, isChainId } from "./chains/types.js";
 export type { ChainAccount, ChainId, RpcConfig } from "./chains/types.js";
 
