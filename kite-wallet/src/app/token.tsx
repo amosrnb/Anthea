@@ -1,31 +1,33 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Cta, IconButton } from '../components/Buttons';
 import { PriceChart } from '../components/PriceChart';
 import { Txt } from '../components/Txt';
-import { ASSETS, RANGES, formatAmount, formatUsd, rangeCaption, type ChainId } from '../lib/data';
+import { ASSETS, RANGES, formatAmount, formatPct, formatUsd, rangeCaption, type ChainId, type Range } from '../lib/data';
 import { goHome } from '../lib/nav';
+import { seriesChange, usePriceHistory } from '../lib/use-market';
 import { colors } from '../lib/theme';
 import { useWallet } from '../lib/wallet-context';
 
 export default function Token() {
   const insets = useSafeAreaInsets();
-  const { status, balances } = useWallet();
+  const { status, balances, prices, network } = useWallet();
   const params = useLocalSearchParams<{ chain?: string }>();
-  const [rangeLabel, setRangeLabel] = useState('1D');
+  const [range, setRange] = useState<Range>('1D');
+  const chain: ChainId = params.chain === 'solana' ? 'solana' : 'ethereum';
+  const history = usePriceHistory(chain, range);
+  const values = useMemo(() => history.points?.map((p) => p[1]) ?? null, [history.points]);
 
   if (status !== 'unlocked') return <Redirect href="/" />;
 
-  const chain: ChainId = params.chain === 'solana' ? 'solana' : 'ethereum';
   const a = ASSETS[chain];
-  const balance = balances[chain];
-  const range = RANGES.find((r) => r.label === rangeLabel) ?? RANGES[1];
-  const down = range.delta.startsWith('-');
-  const pct = Number(range.delta.replace(/[+%]/g, ''));
-  const changeUsd = Math.abs((a.usdPrice * pct) / 100);
+  const balance = balances[chain] === null ? null : Number(balances[chain]);
+  const price = prices?.[chain].usd ?? null;
+  const change = seriesChange(history.points);
+  const down = !!change && change.abs < 0;
 
   return (
     <ScrollView
@@ -43,28 +45,34 @@ export default function Token() {
         <View style={[styles.mark, { backgroundColor: a.markBg }]}>
           <Txt size={17} weight={900} color={a.markInk}>{a.mark}</Txt>
         </View>
-        <Txt size={34} weight={900} ls={0.3} tabular style={{ marginTop: 12 }}>{formatUsd(a.usdPrice)}</Txt>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-          <View style={{ backgroundColor: colors.accentTint, borderRadius: 11, paddingVertical: 4, paddingHorizontal: 9 }}>
-            <Txt size={12} tabular color={down ? colors.neg : colors.accentText}>{range.delta}</Txt>
-          </View>
-          <Txt size={12.5} color={colors.muted}>{formatUsd(changeUsd)} {rangeCaption(range.label)}</Txt>
+        <Txt size={34} weight={900} ls={0.3} tabular style={{ marginTop: 12 }}>{price === null ? '—' : formatUsd(price)}</Txt>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, minHeight: 24 }}>
+          {change ? (
+            <>
+              <View style={{ backgroundColor: colors.accentTint, borderRadius: 11, paddingVertical: 4, paddingHorizontal: 9 }}>
+                <Txt size={12} tabular color={down ? colors.neg : colors.accentText}>{formatPct(change.pct)}</Txt>
+              </View>
+              <Txt size={12.5} color={colors.muted}>{down ? '-' : '+'}{formatUsd(Math.abs(change.abs))} {rangeCaption(range)}</Txt>
+            </>
+          ) : (
+            history.error && <Txt size={12.5} color={colors.muted}>Price history unavailable right now</Txt>
+          )}
         </View>
 
-        <PriceChart range={range} />
+        <PriceChart values={values} />
 
         <View style={styles.ranges}>
           {RANGES.map((r) => {
-            const on = r.label === rangeLabel;
+            const on = r === range;
             return (
               <Pressable
-                key={r.label}
-                onPress={() => setRangeLabel(r.label)}
+                key={r}
+                onPress={() => setRange(r)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
                 style={[styles.range, on && styles.rangeOn]}
               >
-                <Txt size={12} tabular color={on ? colors.ink : colors.muted}>{r.label}</Txt>
+                <Txt size={12} tabular color={on ? colors.ink : colors.muted}>{r}</Txt>
               </Pressable>
             );
           })}
@@ -74,11 +82,15 @@ export default function Token() {
       <View style={styles.balanceCard}>
         <View style={styles.between}>
           <Txt size={13.5} color={colors.muted}>Your balance</Txt>
-          <Txt size={14.5} tabular>{formatAmount(balance, a)}</Txt>
+          <Txt size={14.5} tabular>{balance === null ? '—' : formatAmount(balance, a)}</Txt>
         </View>
         <View style={[styles.between, { marginTop: 12 }]}>
           <Txt size={13.5} color={colors.muted}>Value</Txt>
-          <Txt size={14.5} tabular>{formatUsd(balance * a.usdPrice)}</Txt>
+          <Txt size={14.5} tabular>{balance === null || price === null ? '—' : formatUsd(balance * price)}</Txt>
+        </View>
+        <View style={[styles.between, { marginTop: 12 }]}>
+          <Txt size={13.5} color={colors.muted}>Network</Txt>
+          <Txt size={13.5} color={network === 'testnet' ? colors.accentText : colors.ink}>{a.networks[network]}</Txt>
         </View>
       </View>
 

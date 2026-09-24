@@ -1,8 +1,9 @@
 import { Redirect, router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Eyebrow } from '../../components/Buttons';
-import { FlowScreen } from '../../components/Flow';
+import { Cta, Eyebrow } from '../../components/Buttons';
+import { FlowScreen, Sheet } from '../../components/Flow';
 import { Icon, type IconName } from '../../components/Icon';
 import { Txt } from '../../components/Txt';
 import { colors } from '../../lib/theme';
@@ -41,8 +42,15 @@ function Row({ icon, title, sub, right, rightColor, first, onPress }: {
 }
 
 export default function Settings() {
-  const { status, backedUp, lock } = useWallet();
+  const { status, backedUp, lock, network, setNetwork, flash } = useWallet();
+  const [confirmMainnet, setConfirmMainnet] = useState(false);
   if (status !== 'unlocked') return <Redirect href="/" />;
+
+  const switchTo = async (n: 'mainnet' | 'testnet') => {
+    setConfirmMainnet(false);
+    await setNetwork(n);
+    flash(n === 'mainnet' ? 'Switched to mainnet' : 'Switched to testnet');
+  };
 
   return (
     <FlowScreen eyebrow="ANTHEA" title="Settings" onBack={() => router.back()}>
@@ -55,6 +63,14 @@ export default function Settings() {
           right={backedUp ? 'BACKED UP' : 'NOT BACKED UP'}
           rightColor={backedUp ? colors.accentText : colors.neg}
           onPress={() => router.push('/settings/backup')}
+        />
+        <Row
+          icon="swap"
+          title="Network"
+          sub={network === 'testnet' ? 'Test network: Sepolia and Solana Devnet' : 'Mainnet: real ETH and SOL'}
+          right={network === 'testnet' ? 'TESTNET' : 'MAINNET'}
+          rightColor={network === 'testnet' ? colors.accentText : colors.ink}
+          onPress={() => (network === 'testnet' ? setConfirmMainnet(true) : switchTo('testnet'))}
         />
         <Row
           icon="lock"
@@ -75,8 +91,21 @@ export default function Settings() {
         Anthea is a non-custodial wallet. Your keys are created and kept only on this device, encrypted with your password. Anthea never sees your seed phrase or holds your funds, and can&apos;t recover them for you. If you lose both your password and your seed phrase, your funds can&apos;t be recovered.
       </Txt>
       <Txt size={13} lh={1.6} color={colors.muted} style={{ marginHorizontal: 4, marginTop: 12 }}>
-        Prototype: balances, prices and transactions are simulated. No real keys are created and nothing is sent to a network.
+        Balances and transactions come straight from the blockchain; transactions are signed on this device. Prices are from CoinGecko. Swap is a preview and doesn&apos;t send anything yet.
       </Txt>
+
+      {confirmMainnet && (
+        <Sheet
+          title="Switch to mainnet?"
+          sub="On mainnet you send real ETH and SOL. Transactions can't be reversed. Your addresses and seed phrase stay the same."
+          onClose={() => setConfirmMainnet(false)}
+        >
+          <View style={{ gap: 10 }}>
+            <Cta label="Use mainnet" onPress={() => switchTo('mainnet')} />
+            <Cta label="Stay on testnet" variant="secondary" onPress={() => setConfirmMainnet(false)} />
+          </View>
+        </Sheet>
+      )}
     </FlowScreen>
   );
 }

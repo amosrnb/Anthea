@@ -2,15 +2,15 @@ import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
-import { chartPaths, type Range } from '../lib/data';
+import { chartPaths } from '../lib/data';
 import { colors } from '../lib/theme';
 
 const H = 64;
 
-/** Portfolio sparkline with a fading area fill. Drawn at the measured width so the stroke stays 2.2 pt. */
-export function BalanceChart({ range }: { range: Range }) {
+/** Portfolio sparkline with a fading area fill; empty while loading or unavailable. Drawn at the measured width so the stroke stays 2.2 pt. */
+export function BalanceChart({ values }: { values: number[] | null }) {
   const [w, setW] = useState(0);
-  const paths = useMemo(() => (w ? chartPaths(range, w, H) : null), [range, w]);
+  const paths = useMemo(() => (w && values ? chartPaths(values, w, H) : null), [values, w]);
 
   return (
     <View style={{ height: H, marginTop: 14 }} onLayout={(e) => setW(Math.round(e.nativeEvent.layout.width))}>

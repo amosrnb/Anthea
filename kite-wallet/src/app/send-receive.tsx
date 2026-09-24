@@ -1,8 +1,9 @@
+import { ETHEREUM_DECIMALS, SOLANA_DECIMALS, explorerTxUrl, formatUnits, parseUnits } from '@anthea/wallet-core';
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import QRCode from 'qrcode';
-import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 
@@ -16,12 +17,28 @@ import {
   formatUsd,
   isValidAddress,
   shortAddress,
-  simulateBroadcast,
+  truncateDecimals,
   type ChainId,
 } from '../lib/data';
 import { goHome } from '../lib/nav';
 import { colors, fonts } from '../lib/theme';
-import { useWallet } from '../lib/wallet-context';
+import { friendlyError, useWallet } from '../lib/wallet-context';
+
+/** On-chain decimals: wei for ETH, lamports for SOL. */
+const UNITS: Record<ChainId, number> = { ethereum: ETHEREUM_DECIMALS, solana: SOLANA_DECIMALS };
+/** Placeholder amount for a fee quote before the user has typed one. */
+const QUOTE_AMOUNT = '0.001';
+
+/** Exact base units for a typed amount, or null if it isn't a number. */
+function toUnits(input: string, chain: ChainId): bigint | null {
+  const v = input.replace(',', '.').trim();
+  if (!/^\d*\.?\d*$/.test(v) || v === '' || v === '.') return null;
+  try {
+    return parseUnits(v, UNITS[chain]);
+  } catch {
+    return null;
+  }
+}
 
 type Mode = 'send' | 'receive';
 
@@ -68,36 +85,81 @@ export default function SendReceive() {
 }
 
 function SendPane({ chain }: { chain: ChainId }) {
-  const { balances, flash, debit } = useWallet();
+  const { balances, addresses, prices, network, estimateFee, send } = useWallet();
   const a = ASSETS[chain];
-  const balance = balances[chain];
+  const dec = UNITS[chain];
+  const price = prices?.[chain].usd ?? null;
+  const balanceText = balances[chain];
+  const balanceUnits = balanceText === null ? null : parseUnits(balanceText, dec);
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('');
   const [reviewing, setReviewing] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sentHash, setSentHash] = useState<string | null>(null);
 
-  const value = Number(amount.replace(',', '.'));
-  const addrError = to && !isValidAddress(chain, to) ? `Enter a valid ${a.name} address.` : null;
+  const toTrim = to.trim();
+  const toValid = isValidAddress(chain, toTrim);
+  const units = toUnits(amount, chain);
+  const amountText = units === null ? null : formatUnits(units, dec);
+  const value = units === null ? 0 : Number(amountText);
+
+  // Live fee quote for this recipient and amount (own address and a small
+  // amount stand in until they're entered), debounced while typing.
+  const feeTo = toValid ? toTrim : addresses[chain];
+  const feeAmount = units !== null && units > 0n ? amountText! : QUOTE_AMOUNT;
+  const feeKey = `${network}:${chain}:${feeTo}:${feeAmount}`;
+  const [fee, setFee] = useState<{ key: string; value: string | null; error: string | null } | null>(null);
+  useEffect(() => {
+    let live = true;
+    const t = setTimeout(() => {
+      estimateFee(chain, feeTo, feeAmount)
+        .then((v) => live && setFee({ key: feeKey, value: v, error: null }))
+        .catch((e) => live && setFee({ key: feeKey, value: null, error: friendlyError(e) }));
+    }, 400);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [chain, feeTo, feeAmount, feeKey, estimateFee]);
+  // Keep showing the previous quote while a new one loads.
+  const feeText = fee?.value ?? null;
+  const feeUnits = feeText === null ? null : parseUnits(feeText, dec);
+  const feeLabel = chain === 'ethereum' ? 'Network fee (max)' : 'Network fee';
+
+  const enough = units !== null && balanceUnits !== null && feeUnits !== null && units + feeUnits <= balanceUnits;
+  const addrError = toTrim && !toValid ? `Enter a valid ${a.name} address.` : null;
   const amtError = amount
-    ? !(value > 0)
+    ? units === null || units <= 0n
       ? 'Enter an amount above 0.'
-      : value + a.fee > balance
+      : balanceUnits !== null && feeUnits !== null && !enough
         ? `Not enough ${a.symbol} to cover the amount and network fee.`
         : null
     : null;
-  const ready = isValidAddress(chain, to) && value > 0 && value + a.fee <= balance;
+  const ready = toValid && units !== null && units > 0n && enough;
+
+  const max = () => {
+    if (balanceUnits === null || feeUnits === null) return;
+    const spendable = balanceUnits > feeUnits ? balanceUnits - feeUnits : 0n;
+    setAmount(truncateDecimals(formatUnits(spendable, dec), 9));
+  };
 
   const confirm = async () => {
     setSending(true);
-    await simulateBroadcast();
-    debit(chain, value + a.fee);
-    flash(`Sent ${formatAmount(value, a)}`);
-    goHome();
+    setSendError(null);
+    try {
+      setSentHash(await send(chain, toTrim, amountText!));
+    } catch (e) {
+      setSendError(friendlyError(e));
+    } finally {
+      setSending(false);
+    }
   };
 
+  const feeValue = feeText === null ? (fee?.error ? 'Unavailable' : 'Estimating…') : formatAmount(Number(feeText), a);
   const details = [
-    { k: 'Network', v: a.network },
-    { k: 'Network fee', v: `${formatAmount(a.fee, a)} (${formatUsd(a.fee * a.usdPrice)})` },
+    { k: 'Network', v: a.networks[network] },
+    { k: feeLabel, v: feeText !== null && price !== null ? `${feeValue} (${formatUsd(Number(feeText) * price)})` : feeValue },
   ];
 
   return (
@@ -123,13 +185,14 @@ function SendPane({ chain }: { chain: ChainId }) {
           <View style={styles.between}>
             <Eyebrow>AMOUNT</Eyebrow>
             <Pressable
-              onPress={() => setAmount(String(Number(Math.max(0, balance - a.fee).toFixed(a.decimals))))}
+              onPress={max}
+              disabled={balanceUnits === null || feeUnits === null}
               accessibilityRole="button"
               accessibilityLabel="Use maximum amount"
               hitSlop={8}
             >
               <Txt size={11.5} tabular color={colors.muted}>
-                Balance {formatAmount(balance, a)} · <Txt size={11.5} color={colors.accentText}>Max</Txt>
+                Balance {balanceText === null ? '—' : formatAmount(Number(balanceText), a)} · <Txt size={11.5} color={colors.accentText}>Max</Txt>
               </Txt>
             </Pressable>
           </View>
@@ -151,7 +214,10 @@ function SendPane({ chain }: { chain: ChainId }) {
               <Txt size={14.5}>{a.symbol}</Txt>
             </View>
           </View>
-          <Txt size={13} tabular color={colors.muted} style={{ marginTop: 10 }}>{formatUsd((value || 0) * a.usdPrice)}</Txt>
+          <Txt size={13} tabular color={colors.muted} style={{ marginTop: 10 }}>
+            {price === null ? '—' : formatUsd(value * price)}
+            {network === 'testnet' ? ' · test coins have no value' : ''}
+          </Txt>
           {amtError && <ErrorText>{amtError}</ErrorText>}
         </View>
 
@@ -160,10 +226,11 @@ function SendPane({ chain }: { chain: ChainId }) {
             {details.map((d, i) => (
               <View key={d.k} style={[styles.between, styles.detail, { borderTopColor: i === 0 ? 'transparent' : colors.divider }]}>
                 <Txt size={13.5} color={colors.muted}>{d.k}</Txt>
-                <Txt size={13.5} tabular>{d.v}</Txt>
+                <Txt size={13.5} tabular color={d.k === 'Network' && network === 'testnet' ? colors.accentText : colors.ink}>{d.v}</Txt>
               </View>
             ))}
           </View>
+          {fee?.error && feeText === null && <View style={{ marginHorizontal: 4 }}><ErrorText>{fee.error}</ErrorText></View>}
         </View>
       </ScrollView>
 
@@ -171,15 +238,16 @@ function SendPane({ chain }: { chain: ChainId }) {
         <Cta label="Review" disabled={!ready} onPress={() => setReviewing(true)} />
       </View>
 
-      {reviewing && (
+      {reviewing && !sentHash && (
         <Sheet title="Review send" sub="Check the details. Transactions can't be reversed once sent." onClose={() => !sending && setReviewing(false)}>
           <View style={{ paddingHorizontal: 4 }}>
             {[
-              { k: 'To', v: shortAddress(to.trim()) },
+              { k: 'To', v: shortAddress(toTrim) },
+              { k: 'Network', v: a.networks[network] },
               { k: 'Amount', v: formatAmount(value, a) },
-              { k: 'Value', v: formatUsd(value * a.usdPrice) },
-              { k: 'Network fee', v: formatAmount(a.fee, a) },
-              { k: 'Total', v: formatAmount(value + a.fee, a) },
+              { k: 'Value', v: price === null ? '—' : formatUsd(value * price) },
+              { k: feeLabel, v: feeValue },
+              { k: 'Total', v: feeText === null ? '—' : formatAmount(value + Number(feeText), a) },
             ].map((d, i) => (
               <View key={d.k} style={[styles.between, styles.detail, { borderTopColor: i === 0 ? 'transparent' : colors.divider }]}>
                 <Txt size={13.5} color={colors.muted}>{d.k}</Txt>
@@ -187,9 +255,23 @@ function SendPane({ chain }: { chain: ChainId }) {
               </View>
             ))}
           </View>
+          {sendError && <ErrorText>{sendError}</ErrorText>}
           <View style={{ gap: 10, marginTop: 16 }}>
-            <Cta label={sending ? 'Sending…' : 'Confirm and send'} disabled={sending} onPress={confirm} />
+            <Cta label={sending ? 'Sending…' : 'Confirm and send'} disabled={sending || !ready} onPress={confirm} />
             <Cta label="Edit" variant="secondary" disabled={sending} onPress={() => setReviewing(false)} />
+          </View>
+        </Sheet>
+      )}
+
+      {sentHash && (
+        <Sheet
+          title="Sent"
+          sub={`${formatAmount(value, a)} is on its way to ${shortAddress(toTrim)}. It usually confirms within ${chain === 'ethereum' ? 'a minute' : 'a few seconds'}; the status shows on Home.`}
+          onClose={goHome}
+        >
+          <View style={{ gap: 10 }}>
+            <Cta label="Done" onPress={goHome} />
+            <Cta label="View in block explorer" variant="secondary" onPress={() => Linking.openURL(explorerTxUrl(chain, sentHash, network))} />
           </View>
         </Sheet>
       )}
@@ -198,15 +280,37 @@ function SendPane({ chain }: { chain: ChainId }) {
 }
 
 function ReceivePane({ chain }: { chain: ChainId }) {
-  const { flash, addresses } = useWallet();
+  const { flash, addresses, network, requestAirdrop } = useWallet();
   const a = ASSETS[chain];
   const address = addresses[chain];
+  const [airdropping, setAirdropping] = useState(false);
+  const [airdropError, setAirdropError] = useState<string | null>(null);
   // High error correction so the logo in the centre doesn't stop it scanning.
   const qr = useMemo(() => QRCode.create(address, { errorCorrectionLevel: 'H' }).modules, [address]);
 
   const copy = async () => {
     await Clipboard.setStringAsync(address);
     flash('Address copied');
+  };
+
+  const airdrop = async () => {
+    setAirdropping(true);
+    setAirdropError(null);
+    try {
+      await requestAirdrop();
+      flash('1 test SOL requested');
+    } catch (e) {
+      const msg = friendlyError(e);
+      setAirdropError(/rate limit|busy|429/i.test(msg) ? 'The Devnet faucet is busy. Use the web faucet instead.' : msg);
+    } finally {
+      setAirdropping(false);
+    }
+  };
+
+  const openFaucet = async () => {
+    await Clipboard.setStringAsync(address);
+    flash('Address copied. Paste it in the faucet');
+    Linking.openURL(a.faucetUrl);
   };
 
   return (
@@ -223,12 +327,23 @@ function ReceivePane({ chain }: { chain: ChainId }) {
           </View>
         </View>
         <Txt size={18} tabular style={{ marginTop: 20 }}>{shortAddress(address)}</Txt>
-        <Txt size={12.5} color={colors.muted} style={{ marginTop: 6 }}>{a.network}</Txt>
+        <Txt size={12.5} color={network === 'testnet' ? colors.accentText : colors.muted} style={{ marginTop: 6 }}>{a.networks[network]}</Txt>
       </View>
       <Txt size={13} lh={1.6} color={colors.muted} style={{ marginTop: 16, marginHorizontal: 4, textAlign: 'center' }}>
-        {`Only send ${a.symbol} on ${a.network} to this address. Assets sent from other networks may be lost permanently.`}
+        {network === 'testnet'
+          ? `You're on the test network: this address receives free test ${a.symbol} on ${a.networks.testnet}. The same address also works on mainnet, but the app only shows test balances until you switch in Settings.`
+          : `Only send ${a.symbol} on ${a.networks.mainnet} to this address. Assets sent from other networks may be lost permanently.`}
       </Txt>
-      <Cta label="Copy address" variant="secondary" onPress={copy} style={{ marginTop: 'auto', alignSelf: 'stretch' }} />
+      {airdropError && <ErrorText>{airdropError}</ErrorText>}
+      <View style={{ marginTop: 'auto', alignSelf: 'stretch', gap: 10 }}>
+        {network === 'testnet' && chain === 'solana' && (
+          <Cta label={airdropping ? 'Requesting…' : 'Get 1 test SOL'} disabled={airdropping} onPress={airdrop} />
+        )}
+        {network === 'testnet' && (
+          <Cta label={`Open ${chain === 'ethereum' ? 'Sepolia' : 'Devnet'} faucet`} variant="secondary" onPress={openFaucet} />
+        )}
+        <Cta label="Copy address" variant="secondary" onPress={copy} />
+      </View>
     </View>
   );
 }
