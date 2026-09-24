@@ -1,23 +1,27 @@
 /**
- * Prototype-only data. Keys, seed phrases and addresses are real (see
- * `wallet-context.tsx`, backed by @anthea/wallet-core), but there is no RPC or
- * swap provider yet: balances, prices, swap rates, chart history, fees and
- * transaction broadcast are all mocked here.
+ * Static asset metadata and formatting helpers. Live data comes from
+ * `wallet-context.tsx`: balances, fees, sends and transaction status from the
+ * chains over RPC (via @anthea/wallet-core), prices and chart history from
+ * CoinGecko (`prices.ts`).
  */
+import type { Network } from '@anthea/wallet-core';
 
 export type ChainId = 'ethereum' | 'solana';
+export type { Network };
 
 export type Asset = {
   chainId: ChainId;
   symbol: string;
   name: string;
-  network: string;
+  /** Network name shown to the user, per network. */
+  networks: Record<Network, string>;
   mark: string;
   markBg: string;
   markInk: string;
-  usdPrice: number;
+  /** Decimals shown in the UI (the chain itself uses 18 for ETH and 9 for SOL). */
   decimals: number;
-  fee: number;
+  /** Where to get free test coins. */
+  faucetUrl: string;
 };
 
 export const ASSETS: Record<ChainId, Asset> = {
@@ -25,31 +29,27 @@ export const ASSETS: Record<ChainId, Asset> = {
     chainId: 'ethereum',
     symbol: 'ETH',
     name: 'Ethereum',
-    network: 'Ethereum mainnet',
+    networks: { mainnet: 'Ethereum mainnet', testnet: 'Ethereum Sepolia testnet' },
     mark: 'E',
     markBg: '#5B5BC4',
     markInk: '#FFFFFF',
-    usdPrice: 3138.72,
     decimals: 6,
-    fee: 0.0009,
+    faucetUrl: 'https://cloud.google.com/application/web3/faucet/ethereum/sepolia',
   },
   solana: {
     chainId: 'solana',
     symbol: 'SOL',
     name: 'Solana',
-    network: 'Solana mainnet',
+    networks: { mainnet: 'Solana mainnet', testnet: 'Solana Devnet' },
     mark: 'S',
     markBg: '#A8E6A8',
     markInk: '#0B1A0B',
-    usdPrice: 145.6,
     decimals: 4,
-    fee: 0.000005,
+    faucetUrl: 'https://faucet.solana.com',
   },
 };
 
 export const CHAINS: ChainId[] = ['ethereum', 'solana'];
-
-export const START_BALANCES: Record<ChainId, number> = { ethereum: 1.842, solana: 18.41 };
 
 export function formatUsd(v: number) {
   return v.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -71,46 +71,32 @@ export function isValidAddress(chain: ChainId, addr: string) {
   return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
 }
 
-/** Mock exchange rate between two assets, from their mock USD prices. */
-export function mockRate(from: ChainId, to: ChainId) {
-  return ASSETS[from].usdPrice / ASSETS[to].usdPrice;
+export function formatPct(v: number) {
+  return `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
 }
 
-/** Simulates broadcasting a signed transaction. No network call. */
-export function simulateBroadcast(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 900));
+/** Cuts a decimal string to at most `places` decimals, rounding down (so a Max amount is never more than the balance). */
+export function truncateDecimals(value: string, places: number) {
+  const [whole, frac = ''] = value.split('.');
+  const cut = frac.slice(0, places).replace(/0+$/, '');
+  return cut ? `${whole}.${cut}` : whole;
 }
 
-// Portfolio chart: mocked price history per range.
-export type Range = { label: string; n: number; vol: number; trend: number; delta: string; abs: string };
+export const RANGES = ['1H', '1D', '1W', '1M', '1Y', 'Max'] as const;
+export type Range = (typeof RANGES)[number];
 
-export const RANGES: Range[] = [
-  { label: '1H', n: 26, vol: 0.5, trend: 0.3, delta: '+0.42%', abs: '+$52.10' },
-  { label: '1D', n: 40, vol: 1, trend: 1.1, delta: '+3.40%', abs: '+$412.20' },
-  { label: '1W', n: 48, vol: 1.4, trend: 2.2, delta: '+8.10%', abs: '+$934.60' },
-  { label: '1M', n: 54, vol: 1.8, trend: 3.4, delta: '-2.60%', abs: '-$328.40' },
-  { label: '1Y', n: 60, vol: 2.4, trend: 6, delta: '+41.8%', abs: '+$3,680.90' },
-  { label: 'Max', n: 64, vol: 3, trend: 9, delta: '+184%', abs: '+$8,042.15' },
-];
-
-export function rangeCaption(label: string) {
+export function rangeCaption(label: Range) {
   if (label === 'Max') return 'all time';
   if (label === '1D') return 'today';
   return 'past ' + label;
 }
 
-/** Deterministic sample price path, smoothed with quadratic midpoints. Returns line and area paths. */
-export function chartPaths(r: Range, W: number, H: number) {
-  const seed = r.label.charCodeAt(0) + r.n;
-  const vs: number[] = [];
-  for (let i = 0; i < r.n; i++) {
-    const t = i / (r.n - 1);
-    const noise = Math.sin(i * 1.7 + seed) * 0.6 + Math.sin(i * 0.53 + seed * 0.7) * 0.9 + Math.sin(i * 3.1 + seed * 1.3) * 0.28;
-    vs.push(noise * r.vol + t * r.trend * (r.label === '1M' ? -1 : 1));
-  }
-  const lo = Math.min(...vs);
-  const span = Math.max(...vs) - lo || 1;
-  const xy = vs.map((v, i) => ({ x: (i / (r.n - 1)) * W, y: 5 + (1 - (v - lo) / span) * (H - 10) }));
+/** Line and area SVG paths through `values` (oldest first), smoothed with quadratic midpoints. */
+export function chartPaths(values: number[], W: number, H: number) {
+  if (values.length < 2) return null;
+  const lo = Math.min(...values);
+  const span = Math.max(...values) - lo || 1;
+  const xy = values.map((v, i) => ({ x: (i / (values.length - 1)) * W, y: 5 + (1 - (v - lo) / span) * (H - 10) }));
   const f = (n: number) => n.toFixed(1);
   let line = `M${f(xy[0].x)} ${f(xy[0].y)}`;
   for (let i = 1; i < xy.length; i++) {

@@ -1,6 +1,7 @@
+import { explorerTxUrl } from '@anthea/wallet-core';
 import { Redirect, router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '../components/Avatar';
@@ -8,22 +9,42 @@ import { BalanceChart } from '../components/BalanceChart';
 import { IconButton } from '../components/Buttons';
 import { Icon, type IconName } from '../components/Icon';
 import { Txt } from '../components/Txt';
-import { ASSETS, CHAINS, RANGES, formatAmount, formatUsd, rangeCaption, type Asset } from '../lib/data';
+import {
+  ASSETS,
+  CHAINS,
+  RANGES,
+  formatAmount,
+  formatPct,
+  formatUsd,
+  rangeCaption,
+  shortAddress,
+  type Asset,
+  type Range,
+} from '../lib/data';
+import { seriesChange, usePortfolioHistory } from '../lib/use-market';
 import { colors } from '../lib/theme';
-import { useWallet } from '../lib/wallet-context';
+import { useWallet, type SentTx } from '../lib/wallet-context';
 
 type Action = { label: string; icon: IconName; primary?: boolean; onPress: () => void };
 
 export default function Home() {
   const insets = useSafeAreaInsets();
-  const { status, balances, backedUp, lock } = useWallet();
-  const [rangeLabel, setRangeLabel] = useState('1D');
+  const { status, balances, prices, backedUp, lock, network, balanceError, refreshing, refreshBalances, sent } = useWallet();
+  const [range, setRange] = useState<Range>('1D');
+
+  const loaded = CHAINS.every((c) => balances[c] !== null);
+  const amounts = useMemo(
+    () => (loaded ? { ethereum: Number(balances.ethereum), solana: Number(balances.solana) } : null),
+    [loaded, balances.ethereum, balances.solana],
+  );
+  const history = usePortfolioHistory(amounts, range);
+  const values = useMemo(() => history.points?.map((p) => p[1]) ?? null, [history.points]);
 
   if (status !== 'unlocked') return <Redirect href="/" />;
 
-  const range = RANGES.find((r) => r.label === rangeLabel) ?? RANGES[1];
-  const down = range.delta.startsWith('-');
-  const total = CHAINS.reduce((sum, c) => sum + balances[c] * ASSETS[c].usdPrice, 0);
+  const total = amounts && prices ? CHAINS.reduce((sum, c) => sum + amounts[c] * prices[c].usd, 0) : null;
+  const change = seriesChange(history.points);
+  const down = !!change && change.abs < 0;
 
   const actions: Action[] = [
     { label: 'Send', icon: 'send', primary: true, onPress: () => router.push('/send-receive?mode=send') },
@@ -41,6 +62,7 @@ export default function Home() {
       style={{ flex: 1 }}
       contentContainerStyle={{ paddingTop: insets.top, paddingBottom: Math.max(insets.bottom, 30) + 10 }}
       showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing && loaded} onRefresh={refreshBalances} tintColor={colors.muted} />}
     >
       <View style={styles.header}>
         <IconButton icon="lock" label="Lock wallet" onPress={lockNow} />
@@ -53,13 +75,28 @@ export default function Home() {
 
       <View style={styles.balanceCard}>
         <View style={{ alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 2 }}>
-          <Txt size={44} weight={900} ls={0.5} tabular style={{ lineHeight: 48 }}>{formatUsd(total)}</Txt>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ backgroundColor: colors.accentTint, borderRadius: 11, paddingVertical: 4, paddingHorizontal: 9 }}>
-              <Txt size={12} tabular color={down ? colors.neg : colors.accentText}>{range.delta}</Txt>
+          <Txt size={44} weight={900} ls={0.5} tabular style={{ lineHeight: 48 }}>{total === null ? '—' : formatUsd(total)}</Txt>
+          {change && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ backgroundColor: colors.accentTint, borderRadius: 11, paddingVertical: 4, paddingHorizontal: 9 }}>
+                <Txt size={12} tabular color={down ? colors.neg : colors.accentText}>{formatPct(change.pct)}</Txt>
+              </View>
+              <Txt size={12.5} color={colors.muted}>{down ? '-' : '+'}{formatUsd(Math.abs(change.abs))} {rangeCaption(range)}</Txt>
             </View>
-            <Txt size={12.5} color={colors.muted}>{range.abs} {rangeCaption(range.label)}</Txt>
-          </View>
+          )}
+          {network === 'testnet' && (
+            <Pressable
+              onPress={() => router.push('/settings')}
+              accessibilityRole="button"
+              accessibilityLabel="Test network. Open settings to change network."
+              style={{ backgroundColor: colors.glass, borderRadius: 11, paddingVertical: 4, paddingHorizontal: 9 }}
+            >
+              <Txt size={11} ls={0.8} color={colors.accentText}>TESTNET · SEPOLIA + DEVNET</Txt>
+            </Pressable>
+          )}
+          {balanceError && (
+            <Txt size={12} color={colors.neg} style={{ textAlign: 'center' }}>{balanceError} Pull down to retry.</Txt>
+          )}
           {!backedUp && (
             <Pressable
               onPress={() => router.push('/settings/backup')}
@@ -70,19 +107,19 @@ export default function Home() {
             </Pressable>
           )}
         </View>
-        <BalanceChart range={range} />
+        <BalanceChart values={values} />
         <View style={styles.ranges}>
           {RANGES.map((r) => {
-            const on = r.label === rangeLabel;
+            const on = r === range;
             return (
               <Pressable
-                key={r.label}
-                onPress={() => setRangeLabel(r.label)}
+                key={r}
+                onPress={() => setRange(r)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
                 style={[styles.range, on && styles.rangeOn]}
               >
-                <Txt size={12} tabular color={on ? colors.ink : colors.muted}>{r.label}</Txt>
+                <Txt size={12} tabular color={on ? colors.ink : colors.muted}>{r}</Txt>
               </Pressable>
             );
           })}
@@ -100,12 +137,19 @@ export default function Home() {
         ))}
       </View>
 
+      {sent.length > 0 && (
+        <View style={styles.list}>
+          {sent.slice(0, 5).map((tx, i) => <SentRow key={tx.hash} tx={tx} first={i === 0} />)}
+        </View>
+      )}
+
       <View style={styles.list}>
         {CHAINS.map((c, i) => (
           <AssetRow
             key={c}
             a={ASSETS[c]}
-            balance={balances[c]}
+            balance={amounts?.[c] ?? (balances[c] === null ? null : Number(balances[c]))}
+            price={prices?.[c].usd ?? null}
             first={i === 0}
             onPress={() => router.push(`/token?chain=${c}`)}
           />
@@ -115,12 +159,51 @@ export default function Home() {
   );
 }
 
-function AssetRow({ a, balance, first, onPress }: { a: Asset; balance: number; first: boolean; onPress: () => void }) {
+const TX_STATUS: Record<SentTx['status'], { label: string; color: string }> = {
+  pending: { label: 'PENDING', color: colors.muted },
+  confirmed: { label: 'CONFIRMED', color: colors.accentText },
+  failed: { label: 'FAILED', color: colors.neg },
+};
+
+/** A transaction sent this session; opens it in the block explorer. */
+function SentRow({ tx, first }: { tx: SentTx; first: boolean }) {
+  const a = ASSETS[tx.chain];
+  const st = TX_STATUS[tx.status];
+  return (
+    <Pressable
+      onPress={() => Linking.openURL(explorerTxUrl(tx.chain, tx.hash, tx.network))}
+      accessibilityRole="link"
+      accessibilityLabel={`Sent ${tx.amount} ${a.symbol}, ${tx.status}. Open in block explorer.`}
+      style={({ pressed }) => [
+        styles.row,
+        { borderTopColor: first ? 'transparent' : colors.divider },
+        pressed && { backgroundColor: 'rgba(255,255,255,.03)' },
+      ]}
+    >
+      <View style={[styles.mark, { backgroundColor: colors.chip }]}>
+        <Icon name="send" size={18} strokeWidth={2.2} color={colors.ink} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Txt size={15} tabular numberOfLines={1}>Sent {tx.amount} {a.symbol}</Txt>
+        <Txt size={12.5} tabular color={colors.muted} style={{ marginTop: 4 }}>To {shortAddress(tx.to)}</Txt>
+      </View>
+      <Txt size={10.5} ls={0.8} color={st.color}>{st.label}</Txt>
+    </Pressable>
+  );
+}
+
+function AssetRow({ a, balance, price, first, onPress }: {
+  a: Asset;
+  balance: number | null;
+  price: number | null;
+  first: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${a.name}, ${formatAmount(balance, a)}`}
+      accessibilityLabel={`${a.name}, ${balance === null ? 'loading' : formatAmount(balance, a)}`}
       style={({ pressed }) => [
         styles.row,
         { borderTopColor: first ? 'transparent' : colors.divider },
@@ -138,11 +221,11 @@ function AssetRow({ a, balance, first, onPress }: { a: Asset; balance: number; f
             <Txt size={9.5} ls={0.6} color={colors.muted}>{a.symbol}</Txt>
           </View>
         </View>
-        <Txt size={12.5} tabular color={colors.muted} style={{ marginTop: 4 }}>{formatAmount(balance, a)}</Txt>
+        <Txt size={12.5} tabular color={colors.muted} style={{ marginTop: 4 }}>{balance === null ? '—' : formatAmount(balance, a)}</Txt>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
-        <Txt size={15.5} tabular>{formatUsd(balance * a.usdPrice)}</Txt>
-        <Txt size={12.5} tabular color={colors.muted} style={{ marginTop: 4 }}>{formatUsd(a.usdPrice)}</Txt>
+        <Txt size={15.5} tabular>{balance === null || price === null ? '—' : formatUsd(balance * price)}</Txt>
+        <Txt size={12.5} tabular color={colors.muted} style={{ marginTop: 4 }}>{price === null ? '—' : formatUsd(price)}</Txt>
       </View>
     </Pressable>
   );

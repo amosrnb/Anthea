@@ -7,7 +7,7 @@ import { Cta, Eyebrow, IconButton } from '../components/Buttons';
 import { Icon } from '../components/Icon';
 import { SizeSlider } from '../components/SizeSlider';
 import { Txt } from '../components/Txt';
-import { ASSETS, formatAmount, formatUsd, mockRate, simulateBroadcast, type Asset, type ChainId } from '../lib/data';
+import { ASSETS, formatAmount, formatUsd, type Asset, type ChainId } from '../lib/data';
 import { goHome } from '../lib/nav';
 import { colors } from '../lib/theme';
 import { useWallet } from '../lib/wallet-context';
@@ -23,36 +23,32 @@ function TokenPill({ a }: { a: Asset }) {
   );
 }
 
+/**
+ * Swap preview. ETH ↔ SOL is a cross-chain swap, which needs a bridge/swap
+ * provider that isn't integrated yet, so this quotes at the live market rate
+ * and doesn't submit anything.
+ */
 export default function Swap() {
   const insets = useSafeAreaInsets();
-  const { status, balances, flash, swap } = useWallet();
+  const { status, balances, prices } = useWallet();
   const [from, setFrom] = useState<ChainId>('ethereum');
   const [pct, setPct] = useState(25);
-  const [sending, setSending] = useState(false);
 
   if (status !== 'unlocked') return <Redirect href="/" />;
 
   const to: ChainId = from === 'ethereum' ? 'solana' : 'ethereum';
   const pay = ASSETS[from];
   const get = ASSETS[to];
-  const spendable = Math.max(0, balances[from] - pay.fee);
-  const amt = (spendable * pct) / 100;
-  const rate = mockRate(from, to);
-  const out = amt * rate;
+  const balanceFrom = Number(balances[from] ?? 0);
+  const balanceTo = Number(balances[to] ?? 0);
+  const amt = (balanceFrom * pct) / 100;
+  const rate = prices ? prices[from].usd / prices[to].usd : null;
+  const out = rate === null ? 0 : amt * rate;
 
   const details = [
-    { k: 'Rate', v: `1 ${pay.symbol} = ${Number(rate.toFixed(get.decimals))} ${get.symbol}`, ink: colors.ink },
-    { k: 'Network fee', v: formatAmount(pay.fee, pay), ink: colors.ink },
-    { k: 'Route', v: 'Simulated · no provider', ink: colors.muted },
+    { k: 'Rate', v: rate === null ? '—' : `1 ${pay.symbol} = ${Number(rate.toFixed(get.decimals))} ${get.symbol}`, ink: colors.ink },
+    { k: 'Route', v: 'Preview at market price', ink: colors.muted },
   ];
-
-  const submit = async () => {
-    setSending(true);
-    await simulateBroadcast();
-    swap(from, to, amt + pay.fee, out);
-    flash(`Swapped ${formatAmount(amt, pay)} for ${formatAmount(out, get)}`);
-    goHome();
-  };
 
   return (
     <ScrollView
@@ -74,13 +70,13 @@ export default function Swap() {
         <View style={{ paddingTop: 18, paddingHorizontal: 18, paddingBottom: 16 }}>
           <View style={styles.between}>
             <Eyebrow>YOU PAY</Eyebrow>
-            <Txt size={11.5} tabular color={colors.muted}>Balance {formatAmount(balances[from], pay)}</Txt>
+            <Txt size={11.5} tabular color={colors.muted}>Balance {balances[from] === null ? '—' : formatAmount(balanceFrom, pay)}</Txt>
           </View>
           <View style={styles.amountRow}>
             <Txt size={36} weight={900} ls={0.4} tabular style={{ flex: 1 }} numberOfLines={1}>{Number(amt.toFixed(pay.decimals))}</Txt>
             <TokenPill a={pay} />
           </View>
-          <Txt size={13} tabular color={colors.muted} style={{ marginTop: 10 }}>{formatUsd(amt * pay.usdPrice)}</Txt>
+          <Txt size={13} tabular color={colors.muted} style={{ marginTop: 10 }}>{prices ? formatUsd(amt * prices[from].usd) : '—'}</Txt>
         </View>
 
         <View style={styles.flipWrap} pointerEvents="box-none">
@@ -97,13 +93,13 @@ export default function Swap() {
         <View style={{ padding: 18 }}>
           <View style={styles.between}>
             <Eyebrow>YOU RECEIVE</Eyebrow>
-            <Txt size={11.5} tabular color={colors.muted}>Balance {formatAmount(balances[to], get)}</Txt>
+            <Txt size={11.5} tabular color={colors.muted}>Balance {balances[to] === null ? '—' : formatAmount(balanceTo, get)}</Txt>
           </View>
           <View style={styles.amountRow}>
             <Txt size={36} weight={900} ls={0.4} tabular color={colors.accent} style={{ flex: 1 }} numberOfLines={1}>{Number(out.toFixed(get.decimals))}</Txt>
             <TokenPill a={get} />
           </View>
-          <Txt size={13} tabular color={colors.muted} style={{ marginTop: 10 }}>{formatUsd(out * get.usdPrice)}</Txt>
+          <Txt size={13} tabular color={colors.muted} style={{ marginTop: 10 }}>{prices ? formatUsd(out * prices[to].usd) : '—'}</Txt>
         </View>
       </View>
 
@@ -145,12 +141,10 @@ export default function Swap() {
       </View>
 
       <View style={{ marginTop: 'auto', paddingTop: 16, paddingHorizontal: 16 }}>
-        <Cta
-          label={sending ? 'Swapping…' : 'Review swap'}
-          disabled={sending || !(amt > 0)}
-          onPress={submit}
-          trailing={sending ? undefined : <Icon name="send" size={17} color={colors.white} strokeWidth={2.2} />}
-        />
+        <Txt size={12.5} lh={1.5} color={colors.muted} style={{ textAlign: 'center', marginBottom: 12, marginHorizontal: 8 }}>
+          Swaps between Ethereum and Solana aren&apos;t live yet. This is a preview at the current market price.
+        </Txt>
+        <Cta label="Swaps coming soon" disabled />
       </View>
     </ScrollView>
   );

@@ -2,15 +2,15 @@ import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
-import { chartPaths, type Range } from '../lib/data';
+import { chartPaths } from '../lib/data';
 import { colors } from '../lib/theme';
 
 const H = 180;
 
-/** Token price chart: same mock path generator as the portfolio sparkline, drawn taller for the token page. */
-export function PriceChart({ range }: { range: Range }) {
+/** Token price chart (USD history), drawn taller than the portfolio sparkline. Empty while loading or unavailable. */
+export function PriceChart({ values }: { values: number[] | null }) {
   const [w, setW] = useState(0);
-  const paths = useMemo(() => (w ? chartPaths(range, w, H) : null), [range, w]);
+  const paths = useMemo(() => (w && values ? chartPaths(values, w, H) : null), [values, w]);
 
   return (
     <View style={{ alignSelf: 'stretch', height: H, marginTop: 18 }} onLayout={(e) => setW(Math.round(e.nativeEvent.layout.width))}>

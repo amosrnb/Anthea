@@ -14,6 +14,9 @@ export {
   deriveEthereumAccount,
   ethereumDerivationPath,
   ETHEREUM_DECIMALS,
+  ETHEREUM_SEPOLIA_DEFAULT_RPC,
+  ethereumChain,
+  ethereumExplorerTxUrl,
 } from "./chains/ethereum.js";
 export {
   SolanaAccount,
@@ -21,9 +24,16 @@ export {
   solanaDerivationPath,
   SOLANA_DECIMALS,
   SOLANA_DEFAULT_RPC,
+  SOLANA_DEVNET_RPC,
+  solanaDefaultRpc,
+  solanaExplorerTxUrl,
 } from "./chains/solana.js";
 export type { SolanaKeypair } from "./chains/solana.js";
-export { CHAIN_IDS, isChainId } from "./chains/types.js";
-export type { ChainAccount, ChainId, RpcConfig } from "./chains/types.js";
+export { CHAIN_IDS, NETWORKS, isChainId } from "./chains/types.js";
+export type { ChainAccount, ChainId, Network, RpcConfig, TransactionStatus } from "./chains/types.js";
+export { explorerTxUrl } from "./explorer.js";
+
+// Exact decimal <-> base-unit conversion (wei, lamports) for callers doing balance math.
+export { formatUnits, parseUnits } from "viem";
 
 export type { EncryptedPayload } from "./crypto.js";
