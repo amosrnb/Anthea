@@ -1,4 +1,4 @@
-import { IND, NEG, POS } from '../data';
+import { NEG, POS } from '../data';
 import { Icon } from '../icons';
 import type { Wallet } from '../useWallet';
 import { DIM, f, Header, HeaderTitle, KvRows, MUTED, Overline, PrimaryCta, TNUM } from '../ui';
@@ -73,12 +73,7 @@ export function Settings({ w }: { w: Wallet }) {
       </Group>
       <Group label="SICHERHEIT">
         <Item label="PIN ändern" value="6 Ziffern" onClick={w.changePin} />
-        <button className="settings-row" onClick={w.toggleFace} role="switch" aria-checked={w.faceId} style={{ paddingTop: 12, paddingBottom: 12 }}>
-          Face ID
-          <span style={{ position: 'relative', width: 48, height: 28, borderRadius: 14, background: w.faceId ? IND : '#2A2A32' }}>
-            <span style={{ position: 'absolute', top: 3, left: w.faceId ? 23 : 3, width: 22, height: 22, borderRadius: '50%', background: '#FFFFFF' }} />
-          </span>
-        </button>
+        <Item label="Passwort ändern" value="Für Transaktionen" onClick={w.changePassword} />
         <Item label="Auto-Sperre" value={w.autoLockLabel} onClick={w.cycleLock} />
         <Item label="Jetzt sperren" value="›" onClick={w.lockNow} />
       </Group>
@@ -87,7 +82,7 @@ export function Settings({ w }: { w: Wallet }) {
       </Group>
       <Group label="ÜBER">
         <Item label="Datenschutz" value="Kein Tracking" onClick={w.privacyInfo} />
-        <div className="settings-row" style={{ cursor: 'default' }}>Version<span>0.1 (MVP)</span></div>
+        <div className="settings-row" style={{ width: 'auto', cursor: 'default' }}>Version<span>0.1 (MVP)</span></div>
       </Group>
       <div style={{ padding: '22px 16px 0' }}>
         <button onClick={w.openReset} style={{ width: '100%', height: 54, border: 0, borderRadius: 20, background: 'rgba(255,143,128,.1)', color: NEG, font: f(900, 15), cursor: 'pointer' }}>Wallet zurücksetzen</button>

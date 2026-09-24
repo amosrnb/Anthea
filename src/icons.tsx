@@ -6,7 +6,7 @@ const PATHS = {
   markets: 'M4 18V9M10 18V5M16 18v-6M22 18H2',
   activity: 'M3 13h4l3-7 4 14 3-7h4',
   settings: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
-  faceid: 'M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.6 1.2 4.4 1.2 6 0',
+  key: 'M14.5 4a5.5 5.5 0 1 1-4.9 8L3 18.6V21h3v-2h2v-2h2l1.6-1.6A5.5 5.5 0 0 1 14.5 4ZM16 8h.01',
   del: 'M9 5h11v14H9l-6-7 6-7ZM13 9.5l5 5M18 9.5l-5 5',
   check: 'M5 12.5 10 17 19 7'
 } as const;
