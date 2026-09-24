@@ -1,8 +1,8 @@
 import type { ComponentType } from 'react';
-import { ACC, IND, INK, NEG } from './data';
+import { IND, INK, NEG } from './data';
 import { Icon } from './icons';
 import { Activity, CheckBoxMark, Reveal, Rpc, Settings, TxDetail } from './screens/Account';
-import { Bio, Import, Pin, Seed, Verify, Warn, Welcome } from './screens/Onboarding';
+import { Import, PasswordField, Password, Pin, Seed, Verify, Warn, Welcome } from './screens/Onboarding';
 import { CoinDetail, Home, Markets } from './screens/Portfolio';
 import { Status, Swap, SwapReview } from './screens/Swap';
 import { Receive, SendAmount, SendAsset, SendReview, SendTo } from './screens/Transfer';
@@ -10,7 +10,7 @@ import { useWallet, type Screen, type Wallet, type WalletProps } from './useWall
 import { f, MUTED, Sheet } from './ui';
 
 const SCREENS: Record<Screen, ComponentType<{ w: Wallet }>> = {
-  welcome: Welcome, warn: Warn, seed: Seed, verify: Verify, import: Import, pin: Pin, bio: Bio,
+  welcome: Welcome, warn: Warn, seed: Seed, verify: Verify, import: Import, pin: Pin, password: Password,
   home: Home, markets: Markets, coin: CoinDetail, receive: Receive,
   sendAsset: SendAsset, sendTo: SendTo, sendAmt: SendAmount, sendReview: SendReview,
   swap: Swap, swapReview: SwapReview, status: Status,
@@ -71,16 +71,18 @@ function ResetSheet({ w }: { w: Wallet }) {
   );
 }
 
-/** Simulated biometric/PIN signing prompt; auto-completes after 1.4 s or on tap. */
-function ConfirmOverlay({ w }: { w: Wallet }) {
+/** Password prompt shown before a transaction is signed. */
+function ConfirmSheet({ w }: { w: Wallet }) {
   return (
-    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 35, display: 'grid', placeItems: 'center' }}>
-      <button onClick={w.runConfirm} style={{ border: 0, width: 210, borderRadius: 30, background: 'rgba(30,30,35,.95)', padding: '28px 20px 22px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, cursor: 'pointer', color: INK }}>
-        <Icon name="faceid" color={ACC} size={54} weight={1.6} />
-        <span style={{ font: f(900, 16) }}>{w.confirmLabel}</span>
-        <span style={{ font: f(800, 12.5), color: MUTED }}>Signatur auf diesem Gerät</span>
-      </button>
-    </div>
+    <Sheet onClose={w.closeConfirm} scrim={0.6} z={35}>
+      <h3 style={{ margin: '16px 4px 4px', font: f(900, 21) }}>Passwort eingeben</h3>
+      <p style={{ margin: '0 4px', font: f(700, 13.5, 1.5), color: MUTED }}>Signatur auf diesem Gerät</p>
+      <form onSubmit={(ev) => { ev.preventDefault(); w.runConfirm(); }} style={{ marginTop: 16 }}>
+        <PasswordField value={w.pwEntry} onChange={w.onPwEntry} placeholder="Passwort" autoFocus />
+        <div role="alert" style={{ height: 18, margin: '8px 6px 0', font: f(800, 12.5), color: NEG }}>{w.pwError}</div>
+        <button type="submit" className="btn btn--primary" style={{ marginTop: 8, height: 54, borderRadius: 20, font: f(900, 15.5), opacity: w.pwEntry ? 1 : 0.4 }}>Bestätigen</button>
+      </form>
+    </Sheet>
   );
 }
 
@@ -104,7 +106,7 @@ export default function App(props: WalletProps) {
       <Current w={w} />
       {w.showDock && <Dock w={w} />}
       {w.resetOpen && <ResetSheet w={w} />}
-      {w.confirmOpen && <ConfirmOverlay w={w} />}
+      {w.confirmOpen && <ConfirmSheet w={w} />}
       {w.toast && <Toast text={w.toast} />}
       <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 134, height: 5, borderRadius: 3, background: 'rgba(247,247,245,.24)', zIndex: 40 }} />
     </div>

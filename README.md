@@ -8,7 +8,7 @@ npm run dev        # http://localhost:5173
 npm run build      # typecheck + production build to dist/
 ```
 
-The design's tweak props are URL params: `?start=welcome|lock|home`, `?testnet=0` hides the TESTNETZ badge, and `?privacy=1` blurs balances. On the lock screen, any 6 digits unlock unless a PIN was set during onboarding.
+The design's tweak props are URL params: `?start=welcome|lock|home`, `?testnet=0` hides the TESTNETZ badge, and `?privacy=1` blurs balances. The 6-digit PIN unlocks the app and protects the seed-phrase view; transactions are confirmed with a password set at the end of onboarding. If you skip onboarding via `?start=`, any PIN and any password are accepted.
 
 Layout of `src/`:
 - `data.ts`: assets, coins, addresses, fees and seed words (ported verbatim from the prototype)

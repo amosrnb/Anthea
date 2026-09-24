@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { ACC, IND } from '../data';
 import { Icon, LockIcon } from '../icons';
 import type { Wallet } from '../useWallet';
@@ -171,16 +172,38 @@ export function Pin({ w }: { w: Wallet }) {
   );
 }
 
-export function Bio({ w }: { w: Wallet }) {
+export function PasswordField({ value, onChange, placeholder, visible, autoFocus }: {
+  value: string; onChange: (ev: React.ChangeEvent<HTMLInputElement>) => void; placeholder: string; visible?: boolean; autoFocus?: boolean;
+}) {
+  // Focus without scrolling: native autoFocus would scroll the clipped device frame while a sheet is still sliding in.
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (autoFocus) ref.current?.focus({ preventScroll: true }); }, [autoFocus]);
   return (
-    <div className="screen" style={{ alignItems: 'center', textAlign: 'center', padding: '90px 30px 0' }}>
-      <span style={{ width: 96, height: 96, borderRadius: 32, background: '#141418', display: 'grid', placeItems: 'center' }}><Icon name="faceid" color={ACC} size={44} weight={1.8} /></span>
-      <h2 style={{ margin: '28px 0 0', font: f(900, 28), letterSpacing: '-.7px' }}>Face ID aktivieren?</h2>
-      <p style={{ margin: '12px 0 0', font: f(700, 14.5, 1.55), color: MUTED, maxWidth: 300 }}>Schneller entsperren und bestätigen. Zum Anzeigen der Phrase bleibt die PIN nötig. Neu registrierte Gesichter deaktivieren Face ID automatisch.</p>
-      <div style={{ marginTop: 'auto', width: '100%', padding: '0 0 34px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button className="btn btn--primary" onClick={w.bioYes}>Aktivieren</button>
-        <button className="btn btn--secondary" onClick={w.bioNo}>Später</button>
+  <input ref={ref} type={visible ? 'text' : 'password'} value={value} onChange={onChange} placeholder={placeholder}
+    autoComplete="new-password" autoCapitalize="off" autoCorrect="off" spellCheck={false}
+    style={{ width: '100%', boxSizing: 'border-box', height: 56, border: 0, outline: 0, borderRadius: 18, background: '#141418', padding: '0 16px', color: '#F7F7F5', font: f(800, 16) }} />
+  );
+}
+
+export function Password({ w }: { w: Wallet }) {
+  return (
+    <div className="screen">
+      <div style={{ height: 40, padding: '16px 18px 10px' }} />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '26px 30px 0', textAlign: 'center' }}>
+        <span style={{ width: 56, height: 56, borderRadius: 19, background: IND, display: 'grid', placeItems: 'center' }}><Icon name="key" color="#FFFFFF" size={24} weight={2.4} /></span>
+        <h2 style={{ margin: '20px 0 0', font: f(900, 26), letterSpacing: '-.6px' }}>Passwort festlegen</h2>
+        <p style={{ margin: '8px 0 0', font: f(700, 14, 1.5), color: MUTED, maxWidth: 300 }}>Damit bestätigst du Transaktionen. Zum Anzeigen der Phrase bleibt die PIN nötig.</p>
       </div>
+      <form onSubmit={(ev) => { ev.preventDefault(); w.savePassword(); }} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '26px 16px 0' }}>
+        <PasswordField value={w.pwA} onChange={w.onPwA} placeholder="Passwort" visible={w.pwVisible} autoFocus />
+        <PasswordField value={w.pwB} onChange={w.onPwB} placeholder="Passwort wiederholen" visible={w.pwVisible} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '6px 6px 0' }}>
+          <span role="status" style={{ font: f(800, 12.5), color: w.pwMsgInk }}>{w.pwMsg}</span>
+          <button type="button" onClick={w.togglePwVisible} style={{ border: 0, background: 'none', padding: 0, cursor: 'pointer', font: f(800, 12.5), color: ACC }}>{w.pwVisible ? 'Verbergen' : 'Anzeigen'}</button>
+        </div>
+        <button type="submit" hidden />
+      </form>
+      <div className="cta"><PrimaryCta onClick={w.savePassword} enabled={w.pwValid}>Passwort speichern</PrimaryCta></div>
     </div>
   );
 }

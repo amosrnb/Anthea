@@ -24,6 +24,7 @@ input::placeholder, textarea::placeholder { color: #5E5E66; }
   margin: 0 auto;
   flex: none;
   overflow: hidden;
+  overflow: clip; /* also blocks programmatic scroll (focus, scrollIntoView) of the frame */
   background: #000000;
   color: #F7F7F5;
   display: flex;
