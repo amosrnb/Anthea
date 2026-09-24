@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet"><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#000000;font-family:'Nunito',system-ui,sans-serif;font-weight:800;-webkit-font-smoothing:antialiased}*::-webkit-scrollbar{display:none}a{color:#6C5CE7}a:hover{color:#4B3FC4}input::placeholder,textarea::placeholder{color:#5E5E66}@keyframes antheaFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes antheaRise{from{transform:translateY(100%)}to{transform:translateY(0)}}@keyframes antheaSpin{to{transform:rotate(360deg)}}</style></helmet>
+
+<div style="position:relative;width:390px;height:844px;margin:0 auto;flex:none;overflow:hidden;background:#000000;color:#F7F7F5;display:flex;flex-direction:column">
+  <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:104px;height:30px;border-radius:16px;background:#000000;z-index:40"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 26px 0;flex:none"><span style="font:900 15px 'Nunito',sans-serif">9:41</span><span style="display:flex;align-items:center;gap:6px"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#F7F7F5"></rect><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#F7F7F5"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#F7F7F5"></rect><rect x="13.5" y="0" width="3" height="11" rx="1" fill="rgba(247,247,245,.3)"></rect></svg><span style="font:900 10px 'Nunito',sans-serif;background:#F7F7F5;color:#000000;border-radius:5px;padding:2px 5px">100</span></span></div>
+
+  <sc-if value="{{ on.welcome }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="position:relative;height:290px;margin-top:16px;flex:none">
+      <span style="position:absolute;left:58px;top:78px;width:120px;height:120px;border-radius:38px;background:#6C5CE7;animation:antheaFloat 5s ease-in-out infinite"></span>
+      <span style="position:absolute;left:148px;top:52px;width:92px;height:92px;border-radius:30px;background:#1A1A1F;animation:antheaFloat 6s ease-in-out infinite"></span>
+      <span style="position:absolute;left:206px;top:146px;width:72px;height:72px;border-radius:24px;background:#22222A"></span>
+      <span style="position:absolute;left:252px;top:72px;width:40px;height:40px;border-radius:14px;background:#6C5CE7"></span>
+      <span style="position:absolute;left:78px;top:214px;width:52px;height:52px;border-radius:18px;background:#1A1A1F"></span>
+      <span style="position:absolute;left:286px;top:200px;width:26px;height:26px;border-radius:9px;background:rgba(108,92,231,.5)"></span>
+    </div>
+    <div style="padding:8px 26px 0">
+      <h1 style="margin:0;font:900 38px/1.08 'Nunito',sans-serif;letter-spacing:-1.2px;text-wrap:pretty">Deine Schlüssel. Dein Gerät.</h1>
+      <p style="margin:14px 0 0;font:700 15px/1.55 'Nunito',sans-serif;color:#9A9AA3;max-width:310px">Ethereum, Solana und Bitcoin in einer App. Kein Konto, keine E-Mail, kein KYC.</p>
+    </div>
+    <div style="margin-top:auto;padding:0 16px 34px;display:flex;flex-direction:column;gap:10px">
+      <button onClick="{{ startCreate }}" style="height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer" style-hover="background:#7E70EB">Neues Wallet erstellen</button>
+      <button onClick="{{ startImport }}" style="height:60px;border:0;border-radius:22px;background:#141418;color:#F7F7F5;font:800 16px 'Nunito',sans-serif;cursor:pointer" style-hover="background:#1E1E23">Bestehendes Wallet importieren</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.warn }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 10px">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:800 13px 'Nunito',sans-serif;color:#9A9AA3">Schritt 1 von 4</span>
+    </div>
+    <div style="padding:14px 22px 0">
+      <h2 style="margin:0;font:900 30px/1.1 'Nunito',sans-serif;letter-spacing:-.8px">Bevor es losgeht</h2>
+      <p style="margin:12px 0 0;font:700 14.5px/1.55 'Nunito',sans-serif;color:#9A9AA3">Anthea erzeugt gleich 12 Wörter. Sie sind der einzige Zugang zu deinem Geld.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding:22px 16px 0">
+      <sc-for list="{{ warnRows }}" as="w" hint-placeholder-count="3">
+        <button onClick="{{ w.onClick }}" style="border:0;width:100%;text-align:left;display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;background:#141418;cursor:pointer;font-family:'Nunito',sans-serif">
+          <span style="flex:none;width:26px;height:26px;border-radius:9px;background:{{ w.boxBg }};display:grid;place-items:center">{{ w.check }}</span>
+          <span style="font:800 15px/1.4 'Nunito',sans-serif;color:#F7F7F5">{{ w.text }}</span>
+        </button>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;padding:0 16px 34px"><button onClick="{{ warnNext }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer;opacity:{{ warnOpacity }}">Wörter anzeigen</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.seed }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 10px">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:800 13px 'Nunito',sans-serif;color:#9A9AA3">Schritt 2 von 4</span>
+    </div>
+    <div style="padding:14px 22px 0">
+      <h2 style="margin:0;font:900 30px/1.1 'Nunito',sans-serif;letter-spacing:-.8px">Deine Wiederherstellungsphrase</h2>
+      <p style="margin:12px 0 0;font:700 14.5px/1.55 'Nunito',sans-serif;color:#9A9AA3">Schreibe die Wörter in dieser Reihenfolge auf Papier. Nicht fotografieren, nicht in die Cloud.</p>
+    </div>
+    <div style="display:flex;gap:6px;padding:16px 22px 0">
+      <span style="font:800 11px 'Nunito',sans-serif;color:#A79BFF;background:rgba(108,92,231,.14);border-radius:8px;padding:5px 9px">Screenshots blockiert</span>
+      <span style="font:800 11px 'Nunito',sans-serif;color:#A79BFF;background:rgba(108,92,231,.14);border-radius:8px;padding:5px 9px">Kopieren deaktiviert</span>
+    </div>
+    <button onClick="{{ revealSeed }}" style="position:relative;margin:14px 16px 0;border:0;padding:16px;border-radius:24px;background:#141418;cursor:pointer;text-align:left">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;filter:{{ seedBlur }}">
+        <sc-for list="{{ seedWords }}" as="s" hint-placeholder-count="12">
+          <span style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:#1E1E23"><span style="width:18px;font:800 12px 'Nunito',sans-serif;color:#5E5E66;font-variant-numeric:tabular-nums">{{ s.n }}</span><span style="font:900 15.5px 'Nunito',sans-serif;color:#F7F7F5;user-select:none">{{ s.w }}</span></span>
+        </sc-for>
+      </div>
+      <sc-if value="{{ seedHidden }}" hint-placeholder-val="{{ true }}">
+        <span style="position:absolute;inset:0;display:grid;place-items:center;font:900 15px 'Nunito',sans-serif;color:#F7F7F5">Zum Anzeigen tippen</span>
+      </sc-if>
+    </button>
+    <div style="margin-top:auto;padding:0 16px 34px"><button onClick="{{ seedNext }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer;opacity:{{ seedOpacity }}">Ich habe sie notiert</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.verify }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 10px">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:800 13px 'Nunito',sans-serif;color:#9A9AA3">Schritt 3 von 4</span>
+    </div>
+    <div style="padding:14px 22px 0">
+      <h2 style="margin:0;font:900 30px/1.1 'Nunito',sans-serif;letter-spacing:-.8px">Kurz prüfen</h2>
+      <p style="margin:12px 0 0;font:700 14.5px/1.55 'Nunito',sans-serif;color:#9A9AA3">Wähle das richtige Wort für jede Position.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;padding:24px 22px 0">
+      <sc-for list="{{ verifyRows }}" as="v" hint-placeholder-count="3">
+        <div>
+          <div style="font:800 12px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">WORT #{{ v.pos }}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px">
+            <sc-for list="{{ v.opts }}" as="o" hint-placeholder-count="3">
+              <button onClick="{{ o.onClick }}" style="border:0;height:48px;border-radius:16px;background:{{ o.bg }};color:{{ o.ink }};font:900 15px 'Nunito',sans-serif;cursor:pointer">{{ o.w }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;padding:0 16px 34px"><button onClick="{{ verifyNext }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer;opacity:{{ verifyOpacity }}">Weiter</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.import }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 10px">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:800 13px 'Nunito',sans-serif;color:#9A9AA3">Import</span>
+    </div>
+    <div style="padding:14px 22px 0">
+      <h2 style="margin:0;font:900 30px/1.1 'Nunito',sans-serif;letter-spacing:-.8px">Phrase eingeben</h2>
+      <p style="margin:12px 0 0;font:700 14.5px/1.55 'Nunito',sans-serif;color:#9A9AA3">12 oder 24 Wörter, durch Leerzeichen getrennt.</p>
+    </div>
+    <div style="margin:18px 16px 0;border-radius:24px;background:#141418;padding:16px">
+      <textarea value="{{ importText }}" onChange="{{ onImport }}" placeholder="wort1 wort2 wort3 …" style="width:100%;box-sizing:border-box;height:120px;resize:none;border:0;outline:0;background:transparent;color:#F7F7F5;font:800 16px/1.6 'Nunito',sans-serif"></textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px">
+        <span style="font:800 12.5px 'Nunito',sans-serif;color:{{ importInk }}">{{ importMsg }}</span>
+        <button onClick="{{ importDemo }}" style="border:0;background:none;padding:0;cursor:pointer;font:800 12.5px 'Nunito',sans-serif;color:#A79BFF">Testphrase</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px 0">
+      <sc-for list="{{ importSugg }}" as="s" hint-placeholder-count="0">
+        <button onClick="{{ s.onClick }}" style="border:0;border-radius:12px;padding:8px 13px;background:#1E1E23;color:#F7F7F5;font:800 13.5px 'Nunito',sans-serif;cursor:pointer">{{ s.w }}</button>
+      </sc-for>
+    </div>
+    <p style="margin:14px 22px 0;font:700 12px/1.5 'Nunito',sans-serif;color:#5E5E66">Autokorrektur und Tastaturvorschläge sind deaktiviert. Vorschläge stammen nur aus der BIP39-Wortliste.</p>
+    <div style="margin-top:auto;padding:0 16px 34px"><button onClick="{{ importNext }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer;opacity:{{ importOpacity }}">Importieren</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.pin }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 10px;height:40px">
+      <sc-if value="{{ pinCanBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button></sc-if>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:26px 30px 0;text-align:center">
+      <span style="width:56px;height:56px;border-radius:19px;background:#6C5CE7;display:grid;place-items:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="3"></rect><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg></span>
+      <h2 style="margin:20px 0 0;font:900 26px 'Nunito',sans-serif;letter-spacing:-.6px">{{ pinTitle }}</h2>
+      <p style="margin:8px 0 0;font:700 14px/1.5 'Nunito',sans-serif;color:#9A9AA3;max-width:290px">{{ pinSub }}</p>
+      <div style="display:flex;gap:14px;margin-top:28px">
+        <sc-for list="{{ pinDots }}" as="d" hint-placeholder-count="6"><span style="width:14px;height:14px;border-radius:50%;background:{{ d.bg }}"></span></sc-for>
+      </div>
+      <div style="height:22px;margin-top:14px;font:800 13px 'Nunito',sans-serif;color:#FF8F80">{{ pinError }}</div>
+    </div>
+    <div style="margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 22px;padding:0 44px 40px">
+      <sc-for list="{{ pinKeys }}" as="k" hint-placeholder-count="12">
+        <button onClick="{{ k.onClick }}" style="height:66px;border:0;border-radius:50%;background:{{ k.bg }};color:#F7F7F5;font:900 26px 'Nunito',sans-serif;cursor:pointer;display:grid;place-items:center" style-active="background:#2A2A32">{{ k.label }}{{ k.icon }}</button>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.bio }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;text-align:center;padding:90px 30px 0">
+    <span style="width:96px;height:96px;border-radius:32px;background:#141418;display:grid;place-items:center"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#A79BFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.6 1.2 4.4 1.2 6 0"></path></svg></span>
+    <h2 style="margin:28px 0 0;font:900 28px 'Nunito',sans-serif;letter-spacing:-.7px">Face ID aktivieren?</h2>
+    <p style="margin:12px 0 0;font:700 14.5px/1.55 'Nunito',sans-serif;color:#9A9AA3;max-width:300px">Schneller entsperren und bestätigen. Zum Anzeigen der Phrase bleibt die PIN nötig. Neu registrierte Gesichter deaktivieren Face ID automatisch.</p>
+    <div style="margin-top:auto;width:100%;padding:0 0 34px;display:flex;flex-direction:column;gap:10px">
+      <button onClick="{{ bioYes }}" style="height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer">Aktivieren</button>
+      <button onClick="{{ bioNo }}" style="height:60px;border:0;border-radius:22px;background:#141418;color:#F7F7F5;font:800 16px 'Nunito',sans-serif;cursor:pointer">Später</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.home }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 0">
+      <button onClick="{{ goScan }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer" style-hover="background:rgba(255,255,255,.1)"><svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="#F7F7F5" stroke-width="1.9" stroke-linecap="round"><path d="M1 6V2h4M17 6V2h-4M1 12v4h4M17 12v4h-4"></path></svg></button>
+      <span style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;border-radius:8px;background:#6C5CE7"></span><span style="font:900 17px 'Nunito',sans-serif;letter-spacing:-.2px">Anthea</span><sc-if value="{{ testnet }}" hint-placeholder-val="{{ false }}"><span style="font:900 9.5px 'Nunito',sans-serif;letter-spacing:.8px;color:#E8C46A;background:rgba(232,196,106,.14);border-radius:6px;padding:3px 6px">TESTNETZ</span></sc-if></span>
+      <button onClick="{{ lockNow }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer" style-hover="background:rgba(255,255,255,.1)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F7F7F5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="3"></rect><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:30px 22px 0">
+      <div style="font:800 12px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">GESAMTWERT</div>
+      <div style="font:900 44px/1 'Nunito',sans-serif;letter-spacing:.5px;font-variant-numeric:tabular-nums;filter:{{ privacyBlur }}">{{ total }}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="background:rgba(108,92,231,.14);border-radius:11px;padding:4px 9px;font:800 12px 'Nunito',sans-serif;font-variant-numeric:tabular-nums;color:{{ totalDeltaInk }}">{{ totalDelta }}</span>
+        <span style="font:800 12.5px 'Nunito',sans-serif;color:#9A9AA3">{{ totalAbs }} · {{ hRangeLabel }}</span>
+      </div>
+    </div>
+    <div style="padding:14px 22px 0">
+      <svg viewBox="0 0 300 64" preserveAspectRatio="none" style="display:block;width:100%;height:64px;overflow:visible">
+        <defs><linearGradient id="antheaFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6C5CE7" stop-opacity=".28"></stop><stop offset="1" stop-color="#6C5CE7" stop-opacity="0"></stop></linearGradient></defs>
+        <path d="{{ hChart.area }}" fill="url(#antheaFill)"></path>
+        <path d="{{ hChart.line }}" fill="none" stroke="#6C5CE7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+      </svg>
+      <div style="display:flex;gap:5px;margin-top:12px">
+        <sc-for list="{{ hRanges }}" as="r" hint-placeholder-count="4"><button onClick="{{ r.onClick }}" style="flex:1;height:30px;border:0;border-radius:10px;cursor:pointer;font:800 12px 'Nunito',sans-serif;background:{{ r.bg }};color:{{ r.ink }}">{{ r.label }}</button></sc-for>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:34px;padding:22px 16px 0">
+      <sc-for list="{{ actions }}" as="a" hint-placeholder-count="3">
+        <button onClick="{{ a.onClick }}" style="border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer" style-hover="filter:brightness(1.12)">
+          <span style="width:58px;height:58px;border-radius:50%;background:{{ a.bg }};display:grid;place-items:center">{{ a.icon }}</span>
+          <span style="font:800 12.5px 'Nunito',sans-serif;color:#9A9AA3">{{ a.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:7px;padding:24px 16px 8px;overflow-x:auto">
+      <sc-for list="{{ netChips }}" as="f" hint-placeholder-count="5"><button onClick="{{ f.onClick }}" style="border:0;flex:none;border-radius:13px;padding:8px 14px;cursor:pointer;font:800 12.5px 'Nunito',sans-serif;background:{{ f.bg }};color:{{ f.ink }}">{{ f.label }}</button></sc-for>
+    </div>
+    <div style="margin:0 16px 130px">
+      <sc-for list="{{ holdings }}" as="h" hint-placeholder-count="6">
+        <button onClick="{{ h.onClick }}" style="width:100%;border:0;background:none;text-align:left;cursor:pointer;display:flex;align-items:center;gap:13px;padding:13px 4px;font-family:'Nunito',sans-serif" style-hover="background:rgba(255,255,255,.03)">
+          <span style="flex:none;width:42px;height:42px;border-radius:15px;background:{{ h.bg }};color:{{ h.ink }};display:grid;place-items:center;font:900 15px 'Nunito',sans-serif">{{ h.mark }}</span>
+          <span style="flex:1;min-width:0">
+            <span style="display:flex;align-items:center;gap:7px"><span style="font:800 15.5px 'Nunito',sans-serif;color:#F7F7F5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.name }}</span><span style="flex:none;font:800 9.5px 'Nunito',sans-serif;letter-spacing:.5px;color:{{ h.tagInk }};background:{{ h.tagBg }};border-radius:6px;padding:3px 6px">{{ h.tag }}</span></span>
+            <span style="display:block;font:800 12.5px 'Nunito',sans-serif;color:#9A9AA3;margin-top:4px;font-variant-numeric:tabular-nums">{{ h.sub }}</span>
+          </span>
+          <span style="text-align:right"><span style="display:block;font:800 15.5px 'Nunito',sans-serif;color:#F7F7F5;font-variant-numeric:tabular-nums;filter:{{ privacyBlur }}">{{ h.value }}</span><span style="display:block;font:800 12.5px 'Nunito',sans-serif;color:{{ h.chgInk }};margin-top:4px;font-variant-numeric:tabular-nums">{{ h.chg }}</span></span>
+        </button>
+      </sc-for>
+      <div style="padding:14px 4px 0;font:700 11.5px 'Nunito',sans-serif;color:#5E5E66">Preise: CoinGecko, Fallback DefiLlama · Stand 09:41</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.markets }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:22px 20px 0">
+      <span style="font:900 28px 'Nunito',sans-serif;letter-spacing:-.7px">Märkte</span>
+      <span style="display:flex;align-items:center;gap:6px;font:800 12px 'Nunito',sans-serif;color:#9A9AA3"><span style="width:7px;height:7px;border-radius:50%;background:#A8E6A8"></span>Live · alle 30 s</span>
+    </div>
+    <div style="margin:16px 16px 0;display:flex;align-items:center;gap:10px;height:46px;border-radius:16px;background:#141418;padding:0 14px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A9AA3" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+      <input value="{{ mSearch }}" onChange="{{ onSearch }}" placeholder="Coin suchen" style="flex:1;border:0;outline:0;background:transparent;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">
+    </div>
+    <div style="display:flex;gap:7px;padding:14px 16px 6px">
+      <sc-for list="{{ mTabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onClick }}" style="border:0;border-radius:13px;padding:8px 14px;cursor:pointer;font:800 12.5px 'Nunito',sans-serif;background:{{ t.bg }};color:{{ t.ink }}">{{ t.label }}</button></sc-for>
+    </div>
+    <div style="margin:0 16px 130px">
+      <sc-for list="{{ coins }}" as="c" hint-placeholder-count="8">
+        <button onClick="{{ c.onClick }}" style="width:100%;border:0;background:none;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 4px;font-family:'Nunito',sans-serif" style-hover="background:rgba(255,255,255,.03)">
+          <span style="flex:none;width:40px;height:40px;border-radius:14px;background:{{ c.bg }};color:{{ c.ink }};display:grid;place-items:center;font:900 14px 'Nunito',sans-serif">{{ c.mark }}</span>
+          <span style="flex:1;min-width:0"><span style="display:block;font:800 15px 'Nunito',sans-serif;color:#F7F7F5">{{ c.name }}</span><span style="display:block;margin-top:3px;font:800 12px 'Nunito',sans-serif;color:#9A9AA3">{{ c.sym }} · #{{ c.rank }}</span></span>
+          <svg viewBox="0 0 64 24" style="width:64px;height:24px;flex:none"><path d="{{ c.spark }}" fill="none" stroke="{{ c.chgInk }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="width:92px;text-align:right"><span style="display:block;font:800 14.5px 'Nunito',sans-serif;color:#F7F7F5;font-variant-numeric:tabular-nums">{{ c.price }}</span><span style="display:block;margin-top:3px;font:800 12px 'Nunito',sans-serif;color:{{ c.chgInk }};font-variant-numeric:tabular-nums">{{ c.chg }}</span></span>
+        </button>
+      </sc-for>
+      <sc-if value="{{ coinsEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:40px 20px;text-align:center;font:700 14px/1.5 'Nunito',sans-serif;color:#9A9AA3">{{ coinsEmptyText }}</div>
+      </sc-if>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.coin }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 0">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:9px;background:{{ coin.bg }};color:{{ coin.ink }};display:grid;place-items:center;font:900 12px 'Nunito',sans-serif">{{ coin.mark }}</span><span style="font:900 17px 'Nunito',sans-serif">{{ coin.name }}</span></span>
+      <button onClick="{{ toggleWatch }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer">{{ starIcon }}</button>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:26px 22px 0">
+      <div style="font:900 40px/1 'Nunito',sans-serif;letter-spacing:.4px;font-variant-numeric:tabular-nums">{{ coin.price }}</div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="background:rgba(108,92,231,.14);border-radius:11px;padding:4px 9px;font:800 12px 'Nunito',sans-serif;color:{{ cChartInk }}">{{ cChartDelta }}</span><span style="font:800 12.5px 'Nunito',sans-serif;color:#9A9AA3">{{ cRangeLabel }}</span></div>
+    </div>
+    <div style="padding:18px 22px 0">
+      <svg viewBox="0 0 300 120" preserveAspectRatio="none" style="display:block;width:100%;height:150px;overflow:visible">
+        <path d="{{ cChart.area }}" fill="url(#antheaFill2)"></path>
+        <defs><linearGradient id="antheaFill2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6C5CE7" stop-opacity=".26"></stop><stop offset="1" stop-color="#6C5CE7" stop-opacity="0"></stop></linearGradient></defs>
+        <path d="{{ cChart.line }}" fill="none" stroke="#6C5CE7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+      </svg>
+      <div style="display:flex;gap:5px;margin-top:14px">
+        <sc-for list="{{ cRanges }}" as="r" hint-placeholder-count="5"><button onClick="{{ r.onClick }}" style="flex:1;height:32px;border:0;border-radius:10px;cursor:pointer;font:800 12px 'Nunito',sans-serif;background:{{ r.bg }};color:{{ r.ink }}">{{ r.label }}</button></sc-for>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 16px;padding:24px 26px 0">
+      <sc-for list="{{ coinStats }}" as="s" hint-placeholder-count="4"><div><div style="font:800 11px 'Nunito',sans-serif;letter-spacing:1.1px;color:#9A9AA3">{{ s.k }}</div><div style="margin-top:6px;font:800 15px 'Nunito',sans-serif;font-variant-numeric:tabular-nums">{{ s.v }}</div></div></sc-for>
+    </div>
+    <div style="margin-top:auto;padding:0 16px 34px">
+      <sc-if value="{{ coinSupported }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <button onClick="{{ coinReceive }}" style="height:54px;border:0;border-radius:20px;background:#141418;color:#F7F7F5;font:800 14.5px 'Nunito',sans-serif;cursor:pointer">Empfangen</button>
+          <button onClick="{{ coinSend }}" style="height:54px;border:0;border-radius:20px;background:#141418;color:#F7F7F5;font:800 14.5px 'Nunito',sans-serif;cursor:pointer">Senden</button>
+          <button onClick="{{ coinSwap }}" style="height:54px;border:0;border-radius:20px;background:#6C5CE7;color:#FFFFFF;font:900 14.5px 'Nunito',sans-serif;cursor:pointer">Swappen</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ coinUnsupported }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;font:700 13px 'Nunito',sans-serif;color:#9A9AA3;padding:16px">Dieses Netzwerk wird in Anthea nicht unterstützt.</div>
+      </sc-if>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.receive }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 6px">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:900 20px 'Nunito',sans-serif;letter-spacing:-.4px">Empfangen</span>
+    </div>
+    <div style="display:flex;gap:6px;padding:12px 16px 0;overflow-x:auto;flex:none">
+      <sc-for list="{{ rcvAssets }}" as="a" hint-placeholder-count="6"><button onClick="{{ a.onClick }}" style="border:0;flex:none;border-radius:13px;padding:8px 14px;cursor:pointer;font:800 12.5px 'Nunito',sans-serif;background:{{ a.bg }};color:{{ a.ink }}">{{ a.label }}</button></sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;padding:10px 16px 0;overflow-x:auto;flex:none">
+      <span style="flex:none;font:800 11px 'Nunito',sans-serif;letter-spacing:1.1px;color:#9A9AA3;padding-right:4px">NETZWERK</span>
+      <sc-for list="{{ rcvNets }}" as="n" hint-placeholder-count="3"><button onClick="{{ n.onClick }}" style="flex:none;border:0;border-radius:11px;padding:6px 11px;cursor:pointer;font:800 12px 'Nunito',sans-serif;background:{{ n.bg }};color:{{ n.ink }}">{{ n.label }}</button></sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:20px 22px 0">
+      <div style="width:220px;height:220px;background:#F7F7F5;border-radius:24px;padding:13px;box-sizing:border-box;position:relative">
+        <div style="display:grid;grid-template-columns:repeat(29,1fr);width:100%;height:100%">
+          <sc-for list="{{ qr }}" as="c" hint-placeholder-count="200"><span style="background:{{ c }}"></span></sc-for>
+        </div>
+        <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:16px;background:#6C5CE7;border:5px solid #F7F7F5"></span>
+      </div>
+      <div style="margin-top:18px;max-width:300px;text-align:center;font:800 16px/1.5 'Nunito',sans-serif;letter-spacing:.6px;word-break:break-all;font-variant-numeric:tabular-nums">{{ rcvAddr }}</div>
+      <div style="margin-top:6px;font:800 12.5px 'Nunito',sans-serif;color:#9A9AA3">{{ rcvNote }}</div>
+    </div>
+    <div style="margin:18px 16px 0;display:flex;gap:11px;align-items:flex-start;border-radius:18px;background:rgba(232,196,106,.1);padding:14px 16px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8C46A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="M12 3 2 20h20L12 3Z"></path><path d="M12 10v4M12 17v.5"></path></svg>
+      <span style="font:800 13.5px/1.45 'Nunito',sans-serif;color:#F2DDA4">{{ rcvWarn }}</span>
+    </div>
+    <div style="margin-top:auto;padding:0 16px 34px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onClick="{{ copyAddr }}" style="height:58px;border:0;border-radius:22px;background:#141418;color:#F7F7F5;font:800 15.5px 'Nunito',sans-serif;cursor:pointer">Kopieren</button>
+      <button onClick="{{ shareAddr }}" style="height:58px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 15.5px 'Nunito',sans-serif;cursor:pointer">Teilen</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.sendAsset }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 6px">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:900 20px 'Nunito',sans-serif;letter-spacing:-.4px">Was möchtest du senden?</span>
+    </div>
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 16px 30px">
+      <sc-for list="{{ sendAssets }}" as="h" hint-placeholder-count="7">
+        <button onClick="{{ h.onClick }}" style="width:100%;border:0;background:none;text-align:left;cursor:pointer;display:flex;align-items:center;gap:13px;padding:13px 4px;font-family:'Nunito',sans-serif" style-hover="background:rgba(255,255,255,.03)">
+          <span style="flex:none;width:42px;height:42px;border-radius:15px;background:{{ h.bg }};color:{{ h.ink }};display:grid;place-items:center;font:900 15px 'Nunito',sans-serif">{{ h.mark }}</span>
+          <span style="flex:1;min-width:0"><span style="display:flex;align-items:center;gap:7px"><span style="font:800 15.5px 'Nunito',sans-serif;color:#F7F7F5">{{ h.sym }}</span><span style="font:800 9.5px 'Nunito',sans-serif;letter-spacing:.5px;color:{{ h.tagInk }};background:{{ h.tagBg }};border-radius:6px;padding:3px 6px">{{ h.tag }}</span></span><span style="display:block;font:800 12.5px 'Nunito',sans-serif;color:#9A9AA3;margin-top:4px">{{ h.sub }}</span></span>
+          <span style="font:800 15px 'Nunito',sans-serif;color:#F7F7F5;font-variant-numeric:tabular-nums">{{ h.value }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.sendTo }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 6px">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="display:flex;flex-direction:column"><span style="font:900 20px 'Nunito',sans-serif;letter-spacing:-.4px">Empfänger</span><span style="font:800 12px 'Nunito',sans-serif;color:#9A9AA3">{{ sendHead }}</span></span>
+    </div>
+    <div style="margin:14px 16px 0;border-radius:20px;background:#141418;padding:14px 16px">
+      <textarea value="{{ sTo }}" onChange="{{ onTo }}" placeholder="{{ toPlaceholder }}" style="width:100%;box-sizing:border-box;height:52px;resize:none;border:0;outline:0;background:transparent;color:#F7F7F5;font:800 15px/1.45 'Nunito',sans-serif;word-break:break-all"></textarea>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button onClick="{{ pasteTo }}" style="border:0;border-radius:12px;padding:8px 13px;background:#1E1E23;color:#F7F7F5;font:800 13px 'Nunito',sans-serif;cursor:pointer">Einfügen</button>
+        <button onClick="{{ scanTo }}" style="border:0;border-radius:12px;padding:8px 13px;background:#1E1E23;color:#F7F7F5;font:800 13px 'Nunito',sans-serif;cursor:pointer">QR scannen</button>
+      </div>
+    </div>
+    <sc-if value="{{ toMsg }}" hint-placeholder-val="{{ false }}">
+      <div style="margin:10px 16px 0;border-radius:16px;background:{{ toMsg.bg }};padding:12px 14px;font:800 13px/1.45 'Nunito',sans-serif;color:{{ toMsg.ink }}">{{ toMsg.text }}</div>
+    </sc-if>
+    <div style="padding:22px 20px 8px;font:800 11px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">ZULETZT VERWENDET</div>
+    <div style="padding:0 16px">
+      <sc-for list="{{ recents }}" as="r" hint-placeholder-count="1">
+        <button onClick="{{ r.onClick }}" style="width:100%;border:0;background:none;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 4px;font-family:'Nunito',sans-serif">
+          <span style="width:38px;height:38px;border-radius:13px;background:#1E1E23"></span>
+          <span><span style="display:block;font:800 15px 'Nunito',sans-serif;color:#F7F7F5">{{ r.short }}</span><span style="display:block;margin-top:3px;font:800 12px 'Nunito',sans-serif;color:#9A9AA3">{{ r.note }}</span></span>
+        </button>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;padding:0 16px 34px"><button onClick="{{ toNext }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer;opacity:{{ toOpacity }}">Weiter</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.sendAmt }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 0">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="display:flex;flex-direction:column"><span style="font:900 20px 'Nunito',sans-serif;letter-spacing:-.4px">Betrag</span><span style="font:800 12px 'Nunito',sans-serif;color:#9A9AA3">An {{ toShort }}</span></span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:18px 20px 0">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:900 44px/1 'Nunito',sans-serif;letter-spacing:.5px;font-variant-numeric:tabular-nums">{{ amtMain }}</span><span style="font:900 20px 'Nunito',sans-serif;color:#9A9AA3">{{ amtUnit }}</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
+        <button onClick="{{ toggleFiat }}" style="border:0;border-radius:11px;padding:6px 11px;background:#1E1E23;color:#F7F7F5;font:800 12.5px 'Nunito',sans-serif;cursor:pointer">≈ {{ amtAlt }}</button>
+        <button onClick="{{ setMax }}" style="border:0;border-radius:11px;padding:6px 11px;background:rgba(108,92,231,.14);color:#A79BFF;font:800 12.5px 'Nunito',sans-serif;cursor:pointer">Max</button>
+      </div>
+      <div style="margin-top:10px;font:800 12px 'Nunito',sans-serif;color:{{ amtInfoInk }}">{{ amtInfo }}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:16px 16px 0">
+      <sc-for list="{{ feeOpts }}" as="f" hint-placeholder-count="3">
+        <button onClick="{{ f.onClick }}" style="border:2px solid {{ f.ring }};border-radius:18px;background:#141418;padding:10px 8px;cursor:pointer;text-align:center;font-family:'Nunito',sans-serif">
+          <span style="display:block;font:800 13px 'Nunito',sans-serif;color:#F7F7F5">{{ f.label }}</span>
+          <span style="display:block;margin-top:3px;font:800 12px 'Nunito',sans-serif;color:#A79BFF;font-variant-numeric:tabular-nums">{{ f.cost }}</span>
+          <span style="display:block;margin-top:2px;font:800 11px 'Nunito',sans-serif;color:#9A9AA3">{{ f.time }}</span>
+        </button>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:4px 10px;padding:8px 30px 10px">
+      <sc-for list="{{ amtKeys }}" as="k" hint-placeholder-count="12">
+        <button onClick="{{ k.onClick }}" style="height:50px;border:0;border-radius:16px;background:transparent;color:#F7F7F5;font:900 24px 'Nunito',sans-serif;cursor:pointer;display:grid;place-items:center" style-active="background:#1E1E23">{{ k.label }}{{ k.icon }}</button>
+      </sc-for>
+    </div>
+    <div style="padding:0 16px 30px"><button onClick="{{ amtNext }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer;opacity:{{ amtOpacity }}">Prüfen</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.sendReview }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 0">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:900 20px 'Nunito',sans-serif;letter-spacing:-.4px">Prüfen</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:22px 20px 6px">
+      <div style="font:900 36px 'Nunito',sans-serif;letter-spacing:.4px;font-variant-numeric:tabular-nums">{{ revAmount }}</div>
+      <div style="margin-top:6px;font:800 13px 'Nunito',sans-serif;color:#9A9AA3">{{ revFiat }}</div>
+    </div>
+    <div style="margin:12px 16px 0">
+      <sc-for list="{{ revRows }}" as="d" hint-placeholder-count="6">
+        <div style="display:flex;justify-content:space-between;gap:18px;padding:12px 4px;border-top:1px solid {{ d.divider }}">
+          <span style="flex:none;font:800 13.5px 'Nunito',sans-serif;color:#9A9AA3">{{ d.k }}</span>
+          <span style="text-align:right;font:800 13.5px/1.45 'Nunito',sans-serif;color:{{ d.ink }};word-break:break-all;font-variant-numeric:tabular-nums">{{ d.v }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <sc-for list="{{ revWarns }}" as="w" hint-placeholder-count="0">
+      <div style="margin:8px 16px 0;border-radius:16px;background:{{ w.bg }};padding:12px 14px;font:800 13px/1.45 'Nunito',sans-serif;color:{{ w.ink }}">{{ w.text }}</div>
+    </sc-for>
+    <div style="margin-top:auto;padding:0 16px 34px"><button onClick="{{ sendConfirm }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer">{{ confirmCta }}</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.swap }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px">
+      <span style="font:900 22px 'Nunito',sans-serif;letter-spacing:-.6px;padding-left:4px">Swappen</span>
+      <span style="display:flex;gap:8px">
+        <button onClick="{{ openSlip }}" style="border:0;height:40px;padding:0 13px;border-radius:15px;background:rgba(255,255,255,.05);color:#F7F7F5;font:800 13px 'Nunito',sans-serif;cursor:pointer">Slippage {{ slipLabel }}</button>
+        <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="rgba(247,247,245,.7)" stroke-width="2.1" stroke-linecap="round"><path d="M1.5 1.5 12.5 12.5M12.5 1.5 1.5 12.5"></path></svg></button>
+      </span>
+    </div>
+    <div style="position:relative;margin:0 16px;display:flex;flex-direction:column;gap:6px">
+      <div style="border-radius:24px;background:#0E0E11;padding:16px 18px">
+        <div style="display:flex;justify-content:space-between"><span style="font:800 11px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">DU ZAHLST</span><span style="font:800 11.5px 'Nunito',sans-serif;color:#9A9AA3">Guthaben {{ swF.balLabel }}</span></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+          <span style="flex:1;font:900 32px 'Nunito',sans-serif;letter-spacing:.4px;font-variant-numeric:tabular-nums">{{ swAmt }}</span>
+          <button onClick="{{ cycleFrom }}" style="border:0;display:flex;align-items:center;gap:8px;background:#1E1E23;border-radius:16px;padding:7px 12px 7px 7px;cursor:pointer;color:#F7F7F5"><span style="width:26px;height:26px;border-radius:9px;background:{{ swF.bg }};color:{{ swF.ink }};display:grid;place-items:center;font:900 12px 'Nunito',sans-serif">{{ swF.mark }}</span><span style="text-align:left"><span style="display:block;font:800 14px 'Nunito',sans-serif">{{ swF.sym }}</span><span style="display:block;font:800 10.5px 'Nunito',sans-serif;color:#9A9AA3">{{ swF.net }}</span></span></button>
+        </div>
+        <div style="margin-top:6px;font:800 12.5px 'Nunito',sans-serif;color:#9A9AA3">{{ swAmtFiat }}</div>
+      </div>
+      <button onClick="{{ flipSwap }}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:44px;height:44px;border-radius:16px;background:#1E1E23;border:4px solid #000000;display:grid;place-items:center;cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A79BFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V5m0 0L3.5 8.5M7 5l3.5 3.5M17 4v15m0 0 3.5-3.5M17 19l-3.5-3.5"></path></svg></button>
+      <div style="border-radius:24px;background:#0E0E11;padding:16px 18px">
+        <div style="display:flex;justify-content:space-between"><span style="font:800 11px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">DU ERHÄLTST (ERWARTET)</span><span style="font:800 11.5px 'Nunito',sans-serif;color:#9A9AA3">{{ quoteLeft }}</span></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+          <span style="flex:1;font:900 32px 'Nunito',sans-serif;letter-spacing:.4px;font-variant-numeric:tabular-nums;color:#A79BFF">{{ swOut }}</span>
+          <button onClick="{{ cycleTo }}" style="border:0;display:flex;align-items:center;gap:8px;background:#1E1E23;border-radius:16px;padding:7px 12px 7px 7px;cursor:pointer;color:#F7F7F5"><span style="width:26px;height:26px;border-radius:9px;background:{{ swT.bg }};color:{{ swT.ink }};display:grid;place-items:center;font:900 12px 'Nunito',sans-serif">{{ swT.mark }}</span><span style="text-align:left"><span style="display:block;font:800 14px 'Nunito',sans-serif">{{ swT.sym }}</span><span style="display:block;font:800 10.5px 'Nunito',sans-serif;color:#9A9AA3">{{ swT.net }}</span></span></button>
+        </div>
+        <div style="margin-top:10px;height:3px;border-radius:2px;background:#1E1E23;overflow:hidden"><div style="height:3px;background:#6C5CE7;width:{{ quoteBar }}%"></div></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px 0">
+      <sc-for list="{{ pctChips }}" as="p" hint-placeholder-count="4"><button onClick="{{ p.onClick }}" style="border:0;height:36px;border-radius:12px;background:{{ p.bg }};color:{{ p.ink }};cursor:pointer;font:800 12.5px 'Nunito',sans-serif">{{ p.label }}</button></sc-for>
+    </div>
+    <div style="margin:10px 16px 0">
+      <sc-for list="{{ quoteRows }}" as="d" hint-placeholder-count="6">
+        <div style="display:flex;justify-content:space-between;gap:14px;padding:9px 4px;border-top:1px solid {{ d.divider }}"><span style="font:800 13px 'Nunito',sans-serif;color:#9A9AA3">{{ d.k }}</span><span style="text-align:right;font:800 13px 'Nunito',sans-serif;color:{{ d.ink }};font-variant-numeric:tabular-nums">{{ d.v }}</span></div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ impactWarn }}" hint-placeholder-val="{{ false }}">
+      <div style="margin:6px 16px 0;border-radius:16px;background:rgba(232,196,106,.1);padding:11px 14px;font:800 12.5px/1.45 'Nunito',sans-serif;color:#F2DDA4">Hohe Preisauswirkung über 3 %. Prüfe Betrag und Route.</div>
+    </sc-if>
+    <div style="margin-top:auto;padding:12px 16px 34px"><button onClick="{{ swapNext }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer">Swap prüfen</button></div>
+
+    <sc-if value="{{ slipOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeSlip }}" style="position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:25"></div>
+      <div style="position:absolute;left:8px;right:8px;bottom:8px;z-index:26;background:#0E0E11;border-radius:34px;padding:22px 20px 28px;animation:antheaRise .3s cubic-bezier(.22,1,.36,1)">
+        <div style="display:flex;justify-content:center"><span style="width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.2)"></span></div>
+        <h3 style="margin:16px 4px 4px;font:900 21px 'Nunito',sans-serif">Slippage-Toleranz</h3>
+        <p style="margin:0 4px;font:700 13.5px/1.5 'Nunito',sans-serif;color:#9A9AA3">Fällt der Kurs weiter, wird der Swap abgebrochen.</p>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px">
+          <sc-for list="{{ slipOpts }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onClick }}" style="border:0;height:46px;border-radius:15px;background:{{ s.bg }};color:{{ s.ink }};font:900 14.5px 'Nunito',sans-serif;cursor:pointer">{{ s.label }}</button></sc-for>
+        </div>
+        <sc-if value="{{ slipWarn }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;border-radius:14px;background:rgba(232,196,106,.1);padding:11px 14px;font:800 12.5px/1.45 'Nunito',sans-serif;color:#F2DDA4">Über 1 % steigt das Risiko einer schlechten Ausführung.</div></sc-if>
+        <button onClick="{{ closeSlip }}" style="margin-top:16px;width:100%;height:54px;border:0;border-radius:20px;background:#6C5CE7;color:#FFFFFF;font:900 15.5px 'Nunito',sans-serif;cursor:pointer">Übernehmen</button>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.swapReview }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 0">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:900 20px 'Nunito',sans-serif;letter-spacing:-.4px">Swap prüfen</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding:18px 16px 0">
+      <sc-for list="{{ swapSteps }}" as="s" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:13px;border-radius:20px;background:#141418;padding:14px 16px">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#6C5CE7;color:#FFFFFF;display:grid;place-items:center;font:900 13px 'Nunito',sans-serif">{{ s.n }}</span>
+          <span><span style="display:block;font:800 15px 'Nunito',sans-serif">{{ s.title }}</span><span style="display:block;margin-top:3px;font:800 12px 'Nunito',sans-serif;color:#9A9AA3">{{ s.sub }}</span></span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin:10px 16px 0">
+      <sc-for list="{{ swapRevRows }}" as="d" hint-placeholder-count="7">
+        <div style="display:flex;justify-content:space-between;gap:14px;padding:11px 4px;border-top:1px solid {{ d.divider }}"><span style="font:800 13.5px 'Nunito',sans-serif;color:#9A9AA3">{{ d.k }}</span><span style="text-align:right;font:800 13.5px 'Nunito',sans-serif;color:{{ d.ink }};font-variant-numeric:tabular-nums">{{ d.v }}</span></div>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;padding:0 16px 34px"><button onClick="{{ swapConfirm }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer">{{ confirmCta }}</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.status }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;padding:90px 22px 0;text-align:center">
+    <span style="width:96px;height:96px;border-radius:50%;background:{{ stBg }};display:grid;place-items:center">{{ stIcon }}</span>
+    <h2 style="margin:26px 0 0;font:900 28px 'Nunito',sans-serif;letter-spacing:-.6px">{{ stTitle }}</h2>
+    <p style="margin:10px 0 0;font:700 14.5px/1.5 'Nunito',sans-serif;color:#9A9AA3;max-width:300px">{{ stSub }}</p>
+    <div style="width:100%;margin-top:26px;text-align:left">
+      <sc-for list="{{ stRows }}" as="d" hint-placeholder-count="3">
+        <div style="display:flex;justify-content:space-between;gap:14px;padding:11px 4px;border-top:1px solid {{ d.divider }}"><span style="font:800 13.5px 'Nunito',sans-serif;color:#9A9AA3">{{ d.k }}</span><span style="font:800 13.5px 'Nunito',sans-serif;color:{{ d.ink }};font-variant-numeric:tabular-nums">{{ d.v }}</span></div>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;width:100%;padding:0 0 34px;display:flex;flex-direction:column;gap:10px">
+      <button onClick="{{ openExplorer }}" style="height:56px;border:0;border-radius:22px;background:#141418;color:#F7F7F5;font:800 15.5px 'Nunito',sans-serif;cursor:pointer">Im Explorer ansehen</button>
+      <button onClick="{{ goHome }}" style="height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer">Fertig</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.activity }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden">
+    <div style="padding:22px 20px 4px;font:900 28px 'Nunito',sans-serif;letter-spacing:-.7px">Aktivität</div>
+    <div style="margin:0 16px 130px">
+      <sc-for list="{{ activity }}" as="a" hint-placeholder-count="5">
+        <div>
+          <sc-if value="{{ a.showHeader }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 4px 6px;font:800 11px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">{{ a.day }}</div></sc-if>
+          <button onClick="{{ a.onClick }}" style="width:100%;border:0;background:none;text-align:left;cursor:pointer;display:flex;align-items:center;gap:13px;padding:12px 4px;font-family:'Nunito',sans-serif" style-hover="background:rgba(255,255,255,.03)">
+            <span style="flex:none;width:42px;height:42px;border-radius:50%;background:#141418;display:grid;place-items:center">{{ a.icon }}</span>
+            <span style="flex:1;min-width:0"><span style="display:block;font:800 15px 'Nunito',sans-serif;color:#F7F7F5">{{ a.title }}</span><span style="display:block;margin-top:3px;font:800 12px 'Nunito',sans-serif;color:#9A9AA3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.sub }}</span></span>
+            <span style="text-align:right"><span style="display:block;font:800 14.5px 'Nunito',sans-serif;color:{{ a.amtInk }};font-variant-numeric:tabular-nums">{{ a.amt }}</span><span style="display:inline-block;margin-top:4px;font:800 10.5px 'Nunito',sans-serif;color:{{ a.stInk }};background:{{ a.stBg }};border-radius:6px;padding:2px 6px">{{ a.status }}</span></span>
+          </button>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.tx }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 0">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:900 20px 'Nunito',sans-serif;letter-spacing:-.4px">Transaktion</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:26px 20px 10px">
+      <span style="width:64px;height:64px;border-radius:50%;background:#141418;display:grid;place-items:center">{{ tx.icon }}</span>
+      <div style="margin-top:16px;font:900 30px 'Nunito',sans-serif;letter-spacing:.3px;color:{{ tx.amtInk }};font-variant-numeric:tabular-nums">{{ tx.amt }}</div>
+      <div style="margin-top:6px;font:800 13.5px 'Nunito',sans-serif;color:#9A9AA3">{{ tx.title }}</div>
+    </div>
+    <div style="margin:10px 16px 0">
+      <sc-for list="{{ txRows }}" as="d" hint-placeholder-count="5">
+        <div style="display:flex;justify-content:space-between;gap:14px;padding:12px 4px;border-top:1px solid {{ d.divider }}"><span style="font:800 13.5px 'Nunito',sans-serif;color:#9A9AA3">{{ d.k }}</span><span style="text-align:right;font:800 13.5px 'Nunito',sans-serif;color:{{ d.ink }}">{{ d.v }}</span></div>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;padding:0 16px 34px"><button onClick="{{ openExplorer }}" style="width:100%;height:58px;border:0;border-radius:22px;background:#141418;color:#F7F7F5;font:800 15.5px 'Nunito',sans-serif;cursor:pointer">Im Explorer ansehen</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.settings }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:120px">
+    <div style="padding:22px 20px 8px;font:900 28px 'Nunito',sans-serif;letter-spacing:-.7px">Einstellungen</div>
+    <div style="padding:14px 20px 6px;font:800 11px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">ALLGEMEIN</div>
+    <div style="margin:0 16px;border-radius:22px;background:#0E0E11;overflow:hidden">
+      <button onClick="{{ cycleCur }}" style="width:100%;border:0;background:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">Währung<span style="color:#9A9AA3">{{ currency }}</span></button>
+      <button onClick="{{ goRpc }}" style="width:100%;border:0;border-top:1px solid rgba(255,255,255,.06);background:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">Netzwerke &amp; RPC<span style="color:#9A9AA3">8 aktiv</span></button>
+      <button onClick="{{ tokensInfo }}" style="width:100%;border:0;border-top:1px solid rgba(255,255,255,.06);background:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">Token verwalten<span style="color:#9A9AA3">Leere ausgeblendet</span></button>
+    </div>
+    <div style="padding:20px 20px 6px;font:800 11px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">SICHERHEIT</div>
+    <div style="margin:0 16px;border-radius:22px;background:#0E0E11;overflow:hidden">
+      <button onClick="{{ changePin }}" style="width:100%;border:0;background:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">PIN ändern<span style="color:#9A9AA3">6 Ziffern</span></button>
+      <button onClick="{{ toggleFace }}" style="width:100%;border:0;border-top:1px solid rgba(255,255,255,.06);background:none;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">Face ID<span style="position:relative;width:48px;height:28px;border-radius:14px;background:{{ faceBg }}"><span style="position:absolute;top:3px;left:{{ faceKnob }}px;width:22px;height:22px;border-radius:50%;background:#FFFFFF"></span></span></button>
+      <button onClick="{{ cycleLock }}" style="width:100%;border:0;border-top:1px solid rgba(255,255,255,.06);background:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">Auto-Sperre<span style="color:#9A9AA3">{{ autoLockLabel }}</span></button>
+      <button onClick="{{ lockNow }}" style="width:100%;border:0;border-top:1px solid rgba(255,255,255,.06);background:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">Jetzt sperren<span style="color:#9A9AA3">›</span></button>
+    </div>
+    <div style="padding:20px 20px 6px;font:800 11px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">BACKUP</div>
+    <div style="margin:0 16px;border-radius:22px;background:#0E0E11;overflow:hidden">
+      <button onClick="{{ revealPhrase }}" style="width:100%;border:0;background:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">Wiederherstellungsphrase anzeigen<span style="color:#9A9AA3">PIN</span></button>
+    </div>
+    <div style="padding:20px 20px 6px;font:800 11px 'Nunito',sans-serif;letter-spacing:1.2px;color:#9A9AA3">ÜBER</div>
+    <div style="margin:0 16px;border-radius:22px;background:#0E0E11;overflow:hidden">
+      <button onClick="{{ privacyInfo }}" style="width:100%;border:0;background:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;color:#F7F7F5;font:800 15px 'Nunito',sans-serif">Datenschutz<span style="color:#9A9AA3">Kein Tracking</span></button>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-top:1px solid rgba(255,255,255,.06);font:800 15px 'Nunito',sans-serif">Version<span style="color:#9A9AA3">0.1 (MVP)</span></div>
+    </div>
+    <div style="padding:22px 16px 0"><button onClick="{{ openReset }}" style="width:100%;height:54px;border:0;border-radius:20px;background:rgba(255,143,128,.1);color:#FF8F80;font:900 15px 'Nunito',sans-serif;cursor:pointer">Wallet zurücksetzen</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.rpc }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 0">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:900 20px 'Nunito',sans-serif;letter-spacing:-.4px">Netzwerke &amp; RPC</span>
+    </div>
+    <p style="margin:16px 20px 6px;font:700 13px/1.55 'Nunito',sans-serif;color:#9A9AA3">Anbieter sehen deine IP-Adresse und abgefragte Adressen. Eigene Endpunkte verbessern die Privatsphäre. Nur HTTPS.</p>
+    <div style="flex:1;min-height:0;overflow-y:auto;margin:6px 16px 0">
+      <sc-for list="{{ rpcs }}" as="r" hint-placeholder-count="8">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-top:1px solid {{ r.divider }}">
+          <span style="width:8px;height:8px;border-radius:50%;background:#A8E6A8"></span>
+          <span style="flex:1"><span style="display:block;font:800 15px 'Nunito',sans-serif">{{ r.net }}</span><span style="display:block;margin-top:3px;font:800 12px 'Nunito',sans-serif;color:#9A9AA3">{{ r.url }}</span></span>
+          <span style="font:800 11.5px 'Nunito',sans-serif;color:#9A9AA3">{{ r.fb }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding:12px 16px 34px"><button onClick="{{ addRpc }}" style="width:100%;height:56px;border:0;border-radius:22px;background:#141418;color:#F7F7F5;font:800 15.5px 'Nunito',sans-serif;cursor:pointer">Eigenen Endpunkt hinzufügen</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ on.reveal }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 0">
+      <button onClick="{{ back }}" style="border:0;width:40px;height:40px;border-radius:15px;background:rgba(255,255,255,.05);display:grid;place-items:center;cursor:pointer"><svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#F7F7F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1.5 2.5 7 9 12.5"></path></svg></button>
+      <span style="font:900 20px 'Nunito',sans-serif;letter-spacing:-.4px">Wiederherstellungsphrase</span>
+    </div>
+    <div style="margin:16px 16px 0;border-radius:18px;background:rgba(255,143,128,.1);padding:14px 16px;font:800 13.5px/1.45 'Nunito',sans-serif;color:#FFB9AE">Wer die Wörter kennt, besitzt das Geld. Zeige sie niemandem, auch nicht dem Support.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 16px 0">
+      <sc-for list="{{ seedWordsPlain }}" as="s" hint-placeholder-count="12"><span style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;background:#141418"><span style="width:18px;font:800 12px 'Nunito',sans-serif;color:#5E5E66">{{ s.n }}</span><span style="font:900 15.5px 'Nunito',sans-serif;user-select:none">{{ s.w }}</span></span></sc-for>
+    </div>
+    <div style="padding:12px 20px 0;font:800 12px 'Nunito',sans-serif;color:#A79BFF">Screenshots blockiert · Kopieren deaktiviert</div>
+    <div style="margin-top:auto;padding:0 16px 34px"><button onClick="{{ back }}" style="width:100%;height:60px;border:0;border-radius:22px;background:#6C5CE7;color:#FFFFFF;font:900 16.5px 'Nunito',sans-serif;cursor:pointer">Fertig</button></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ showDock }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:18px;right:18px;bottom:24px;height:66px;border-radius:26px;background:rgba(19,19,22,.78);backdrop-filter:blur(22px);box-shadow:0 18px 44px rgba(0,0,0,.55);display:grid;grid-template-columns:1fr 1fr 74px 1fr 1fr;align-items:center;padding:0 6px;z-index:10">
+    <sc-for list="{{ navLeft }}" as="n" hint-placeholder-count="2"><button onClick="{{ n.onClick }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px 0;cursor:pointer;color:{{ n.ink }}">{{ n.icon }}<span style="font:800 10px 'Nunito',sans-serif">{{ n.label }}</span></button></sc-for>
+    <div style="display:grid;place-items:center"><button onClick="{{ goSwap }}" style="width:56px;height:56px;border-radius:20px;border:0;background:#6C5CE7;display:grid;place-items:center;cursor:pointer;box-shadow:0 10px 26px rgba(108,92,231,.32)" style-hover="background:#7E70EB"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V5m0 0L3.5 8.5M7 5l3.5 3.5M17 4v15m0 0 3.5-3.5M17 19l-3.5-3.5"></path></svg></button></div>
+    <sc-for list="{{ navRight }}" as="n" hint-placeholder-count="2"><button onClick="{{ n.onClick }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px 0;cursor:pointer;color:{{ n.ink }}">{{ n.icon }}<span style="font:800 10px 'Nunito',sans-serif">{{ n.label }}</span></button></sc-for>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ resetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeReset }}" style="position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:30"></div>
+    <div style="position:absolute;left:8px;right:8px;bottom:8px;z-index:31;background:#0E0E11;border-radius:34px;padding:22px 20px 28px;animation:antheaRise .3s cubic-bezier(.22,1,.36,1)">
+      <div style="display:flex;justify-content:center"><span style="width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.2)"></span></div>
+      <h3 style="margin:16px 4px 6px;font:900 21px 'Nunito',sans-serif">Wallet zurücksetzen?</h3>
+      <p style="margin:0 4px;font:700 13.5px/1.5 'Nunito',sans-serif;color:#9A9AA3">Alle Schlüssel und Daten werden von diesem Gerät gelöscht. Ohne Phrase ist dein Guthaben verloren. Anthea kann sie nicht wiederherstellen.</p>
+      <button onClick="{{ toggleResetChk }}" style="margin-top:16px;width:100%;border:0;display:flex;align-items:center;gap:12px;padding:14px;border-radius:18px;background:#141418;cursor:pointer;text-align:left">
+        <span style="flex:none;width:24px;height:24px;border-radius:8px;background:{{ resetBox }};display:grid;place-items:center">{{ resetCheck }}</span>
+        <span style="font:800 14px 'Nunito',sans-serif;color:#F7F7F5">Ich habe meine Phrase gesichert</span>
+      </button>
+      <button onClick="{{ doReset }}" style="margin-top:12px;width:100%;height:54px;border:0;border-radius:20px;background:#FF8F80;color:#2A0D08;font:900 15.5px 'Nunito',sans-serif;cursor:pointer;opacity:{{ resetOpacity }}">Endgültig zurücksetzen</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:35;display:grid;place-items:center">
+      <button onClick="{{ runConfirm }}" style="border:0;width:210px;border-radius:30px;background:rgba(30,30,35,.95);padding:28px 20px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;cursor:pointer;color:#F7F7F5">
+        <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#A79BFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.6 1.2 4.4 1.2 6 0"></path></svg>
+        <span style="font:900 16px 'Nunito',sans-serif">{{ confirmLabel }}</span>
+        <span style="font:800 12.5px 'Nunito',sans-serif;color:#9A9AA3">Signatur auf diesem Gerät</span>
+      </button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:16px;right:16px;bottom:104px;z-index:36;display:flex;align-items:center;gap:11px;background:rgba(30,30,35,.95);backdrop-filter:blur(18px);border-radius:20px;padding:14px 16px;box-shadow:0 18px 44px rgba(0,0,0,.6)"><span style="flex:none;width:24px;height:24px;border-radius:8px;background:#6C5CE7;display:grid;place-items:center"><svg width="12" height="9" viewBox="0 0 13 10" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"><path d="M1.5 5 4.8 8.3 11.5 1.6"></path></svg></span><span style="font:800 14px/1.35 'Nunito',sans-serif">{{ toast }}</span></div>
+  </sc-if>
+  <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:rgba(247,247,245,.24);z-index:40"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:1080},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;welcome&quot;,&quot;lock&quot;,&quot;home&quot;],&quot;default&quot;:&quot;welcome&quot;,&quot;tsType&quot;:&quot;'welcome'|'lock'|'home'&quot;,&quot;section&quot;:&quot;Prototyp&quot;},&quot;testnet&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prototyp&quot;},&quot;privacyMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prototyp&quot;}}">
+const IND = '#6C5CE7', ACC = '#A79BFF', POS = '#A8E6A8', NEG = '#FF8F80', MUT = '#9A9AA3', WARN = '#E8C46A', INK = '#F7F7F5';
+const RATES = { EUR: 1, USD: 1.08, GBP: 0.85, CHF: 0.95 };
+const ASSETS = [
+  { id: 'eth-eth', sym: 'ETH', name: 'Ethereum', net: 'Ethereum', bal: 1.842, dec: 4, price: 2884.1, chg: 1.24, mark: 'E', bg: '#5B5BC4', ink: '#FFFFFF', coin: 'eth' },
+  { id: 'eth-base', sym: 'ETH', name: 'Ethereum', net: 'Base', bal: 0.412, dec: 4, price: 2884.1, chg: 1.24, mark: 'E', bg: '#5B5BC4', ink: '#FFFFFF', coin: 'eth' },
+  { id: 'usdc-base', sym: 'USDC', name: 'USD Coin', net: 'Base', bal: 2683.1, dec: 2, price: 0.921, chg: 0.01, mark: '$', bg: '#4B7BE5', ink: '#FFFFFF', coin: 'usdc' },
+  { id: 'arb-arb', sym: 'ARB', name: 'Arbitrum', net: 'Arbitrum', bal: 412.5, dec: 2, price: 0.72, chg: -2.41, mark: 'A', bg: '#2D6FD6', ink: '#FFFFFF', coin: 'arb' },
+  { id: 'sol-sol', sym: 'SOL', name: 'Solana', net: 'Solana', bal: 18.204, dec: 3, price: 143.5, chg: 4.12, mark: 'S', bg: '#2A2340', ink: '#C9B8FF', coin: 'sol' },
+  { id: 'jup-sol', sym: 'JUP', name: 'Jupiter', net: 'Solana', bal: 240, dec: 2, price: 0.76, chg: -0.8, mark: 'J', bg: '#1F2A1A', ink: POS, coin: 'jup' },
+  { id: 'btc-btc', sym: 'BTC', name: 'Bitcoin', net: 'Bitcoin', bal: 0.04812, dec: 5, price: 61390, chg: 0.82, pending: 0.0012, mark: 'B', bg: '#D8862A', ink: '#1A0E00', coin: 'btc' },
+  { id: 'kite-bnb', sym: 'KITE', name: 'Kite Token', net: 'BNB Chain', bal: 12000, dec: 0, price: null, chg: null, unverified: true, mark: '?', bg: '#2A2A32', ink: MUT }
+];
+const COINS = [
+  { id: 'btc', sym: 'BTC', name: 'Bitcoin', price: 61390, chg: 0.82, cap: '1,21 Bio. €', vol: '28,4 Mrd. €', hi: 61920, lo: 60410, mark: 'B', bg: '#D8862A', ink: '#1A0E00', asset: 'btc-btc' },
+  { id: 'eth', sym: 'ETH', name: 'Ethereum', price: 2884.1, chg: 1.24, cap: '347,6 Mrd. €', vol: '14,1 Mrd. €', hi: 2910, lo: 2831, mark: 'E', bg: '#5B5BC4', ink: '#FFFFFF', asset: 'eth-eth' },
+  { id: 'usdc', sym: 'USDC', name: 'USD Coin', price: 0.921, chg: 0.01, cap: '67,2 Mrd. €', vol: '6,8 Mrd. €', hi: 0.922, lo: 0.92, mark: '$', bg: '#4B7BE5', ink: '#FFFFFF', asset: 'usdc-base' },
+  { id: 'bnb', sym: 'BNB', name: 'BNB', price: 548.2, chg: -0.61, cap: '80,0 Mrd. €', vol: '1,4 Mrd. €', hi: 556, lo: 541, mark: 'B', bg: '#E8C46A', ink: '#1A1400', asset: null, supported: true },
+  { id: 'sol', sym: 'SOL', name: 'Solana', price: 143.5, chg: 4.12, cap: '67,9 Mrd. €', vol: '3,2 Mrd. €', hi: 145.1, lo: 137.2, mark: 'S', bg: '#2A2340', ink: '#C9B8FF', asset: 'sol-sol' },
+  { id: 'xrp', sym: 'XRP', name: 'XRP', price: 0.54, chg: 2.1, cap: '30,4 Mrd. €', vol: '1,1 Mrd. €', hi: 0.55, lo: 0.52, mark: 'X', bg: '#23232A', ink: INK, asset: null, supported: false },
+  { id: 'pol', sym: 'POL', name: 'Polygon', price: 0.38, chg: -1.9, cap: '3,5 Mrd. €', vol: '0,2 Mrd. €', hi: 0.39, lo: 0.37, mark: 'P', bg: '#6A45C9', ink: '#FFFFFF', asset: null, supported: true },
+  { id: 'arb', sym: 'ARB', name: 'Arbitrum', price: 0.72, chg: -2.41, cap: '2,9 Mrd. €', vol: '0,3 Mrd. €', hi: 0.75, lo: 0.71, mark: 'A', bg: '#2D6FD6', ink: '#FFFFFF', asset: 'arb-arb' },
+  { id: 'jup', sym: 'JUP', name: 'Jupiter', price: 0.76, chg: -0.8, cap: '1,0 Mrd. €', vol: '0,1 Mrd. €', hi: 0.78, lo: 0.74, mark: 'J', bg: '#1F2A1A', ink: POS, asset: 'jup-sol' }
+];
+const SEED = ['orbit', 'velvet', 'harbor', 'canyon', 'marble', 'tunnel', 'lemon', 'rapid', 'ivory', 'signal', 'pepper', 'august'];
+const WORDS = SEED.concat(['abandon', 'ability', 'able', 'about', 'above', 'absent', 'cactus', 'rocket', 'ripple', 'silver', 'ocean', 'orange', 'order', 'velvet', 'venue', 'harvest', 'hat', 'canal', 'candy', 'canvas', 'march', 'margin', 'tunnel', 'turtle', 'lemon', 'lend', 'random', 'range', 'rapid', 'ivory', 'island', 'sign', 'silent', 'pen', 'people', 'pepper', 'audit', 'august', 'aunt']);
+const VERIFY = [{ pos: 3, opts: ['rocket', 'harbor', 'marble'] }, { pos: 7, opts: ['ripple', 'silver', 'lemon'] }, { pos: 11, opts: ['pepper', 'cactus', 'orbit'] }];
+const ADDR = { evm: '0xB4a27C1e9D3f58A0b6E2c4D8f1A3e5C7b9D09Fc1', sol: '7xKpV3mR9qTn2WbYz8LcHd5FjAe4Ug6Ns1Po3Qr7iBtM', btc: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh' };
+const RECENT = { evm: '0x71C9a3F2b8D4e6A1c0E5f7B9d2A4c6E8f0a104Ae', sol: '9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin', btc: 'bc1q9h7garjcy5f3mzmx4sn5lzq9mfaz3kq7k2f0t' };
+const POISON = { evm: '0x71C9e0B7d2F4a9C3e1A8b6D5f0C2e4A7b9d304Ae', sol: '9xQeRk3pLm7Tn2WbYz8LcHd5FjAe4Ug6Ns1PusVFin', btc: 'bc1q9h7gk2m8x4sn5lzq9mfaz3kq0wd8u4q7k2f0t' };
+const FRESH = { evm: '0x3fA9c1D7e2B84a60F5d3C9e8A1b27D4c6E0f91B2', sol: '4Nd1mWqZ8vL2cTk6yHpR3sXe9bFjU7aGo5KrPiVtQw1', btc: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' };
+const FEES = {
+  eth: [{ l: 'Langsam', t: '~5 min', eur: 0.9 }, { l: 'Normal', t: '~1 min', eur: 1.6 }, { l: 'Schnell', t: '~15 s', eur: 2.8 }],
+  l2: [{ l: 'Langsam', t: '~1 min', eur: 0.03 }, { l: 'Normal', t: '~10 s', eur: 0.06 }, { l: 'Schnell', t: '~2 s', eur: 0.12 }],
+  sol: [{ l: 'Langsam', t: '~20 s', eur: 0.001 }, { l: 'Normal', t: '~5 s', eur: 0.004 }, { l: 'Schnell', t: '~1 s', eur: 0.012 }],
+  btc: [{ l: 'Langsam', t: '~60 min', eur: 0.42 }, { l: 'Normal', t: '~30 min', eur: 0.95 }, { l: 'Schnell', t: '~10 min', eur: 1.58 }]
+};
+const RCV = { ETH: ['Ethereum', 'Base', 'Arbitrum', 'Optimism'], USDC: ['Base', 'Ethereum', 'Arbitrum', 'Solana'], SOL: ['Solana'], BTC: ['Bitcoin'], ARB: ['Arbitrum'], JUP: ['Solana'], BNB: ['BNB Chain'], POL: ['Polygon'] };
+const SWAPPABLE = ['eth-eth', 'eth-base', 'usdc-base', 'arb-arb', 'sol-sol', 'jup-sol'];
+const famOf = (net) => net === 'Solana' ? 'sol' : net === 'Bitcoin' ? 'btc' : 'evm';
+const short = (a) => a ? a.slice(0, 6) + '…' + a.slice(-4) : '';
+const nf = (n, d) => Number(n).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+const sw = (s) => ({ fill: 'none', stroke: s, strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' });
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const sp = (props && props.startScreen) || 'welcome';
+    this.state = {
+      screen: sp === 'lock' ? 'pin' : sp, pinMode: sp === 'lock' ? 'unlock' : 'set', flow: 'create', tab: 'home',
+      checks: [false, false, false], seedShown: false, picks: {}, importText: '',
+      pin: '', pinFirst: '', pinError: '', faceId: true, autoLock: 5, currency: 'EUR',
+      netFilter: 'Alle', hRange: '24H', mSearch: '', mTab: 'Top', watch: ['btc', 'sol'], coin: 'eth', cRange: '24H',
+      rcvAsset: 'USDC', rcvNet: 'Base',
+      sAsset: 'usdc-base', sTo: '', sAmt: '', sFiat: false, sFee: 1,
+      swFrom: 'usdc-base', swTo: 'eth-base', swPct: 25, slip: 0.5, slipOpen: false, quoteT: 30,
+      status: null, confirmOpen: false, resetOpen: false, resetChk: false, toast: null, txSel: 'a1',
+      activity: [
+        { id: 'a1', t: 'swap', title: 'USDC → ETH', sub: 'Base · LI.FI', amt: '+0,2104 ETH', status: 'Bestätigt', day: 'HEUTE', time: '09:12', fee: '0,06 €' },
+        { id: 'a2', t: 'swap', title: 'ETH Arbitrum → Base', sub: 'Cross-Chain · LI.FI', amt: '0,1500 ETH', status: 'Unterwegs', day: 'HEUTE', time: '08:47', fee: '0,91 €' },
+        { id: 'a3', t: 'recv', title: 'Empfangen', sub: 'Bitcoin · bc1q9h…2f0t', amt: '+0,00120 BTC', status: 'Unbestätigt', day: 'HEUTE', time: '08:05', fee: '–' },
+        { id: 'a4', t: 'send', title: 'Gesendet', sub: 'Solana · 9xQeWv…VFin', amt: '−2,500 SOL', status: 'Bestätigt', day: 'GESTERN', time: '18:30', fee: '0,004 €' },
+        { id: 'a5', t: 'recv', title: 'Empfangen', sub: 'Base · 0x71C9…04Ae', amt: '+500,00 USDC', status: 'Bestätigt', day: 'GESTERN', time: '11:02', fee: '–' }
+      ]
+    };
+  }
+
+  componentDidMount() {
+    this._q = setInterval(() => { if (this.state.screen === 'swap') this.setState((s) => ({ quoteT: s.quoteT <= 1 ? 30 : s.quoteT - 1 })); }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this._q); clearTimeout(this._x); clearTimeout(this._s); clearTimeout(this._c); clearTimeout(this._p); }
+
+  flash(m) { this.setState({ toast: m }); clearTimeout(this._x); this._x = setTimeout(() => this.setState({ toast: null }), 2400); }
+
+  icon(k, color, size, w) {
+    const e = React.createElement, s = { ...sw(color), strokeWidth: w || 2 }, z = size || 21;
+    const P = (d) => e('svg', { width: z, height: z, viewBox: '0 0 24 24' }, e('path', { d, ...s }));
+    switch (k) {
+      case 'send': return P('M12 19V5M5 12l7-7 7 7');
+      case 'recv': return P('M12 4v14M12 19l-6-6M12 19l6-6');
+      case 'swap': return P('M7 20V5m0 0L3.5 8.5M7 5l3.5 3.5M17 4v15m0 0 3.5-3.5M17 19l-3.5-3.5');
+      case 'home': return P('M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-8Z');
+      case 'markets': return P('M4 18V9M10 18V5M16 18v-6M22 18H2');
+      case 'activity': return P('M3 13h4l3-7 4 14 3-7h4');
+      case 'settings': return P('M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4');
+      case 'faceid': return P('M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.6 1.2 4.4 1.2 6 0');
+      case 'del': return P('M9 5h11v14H9l-6-7 6-7ZM13 9.5l5 5M18 9.5l-5 5');
+      case 'check': return P('M5 12.5 10 17 19 7');
+      case 'star': return e('svg', { width: 18, height: 18, viewBox: '0 0 24 24' }, e('path', { d: 'm12 3 2.8 5.8 6.2.9-4.5 4.4 1 6.2L12 17.4l-5.5 2.9 1-6.2L3 9.7l6.2-.9L12 3Z', ...sw(color), fill: size ? color : 'none', strokeWidth: 2 }));
+    }
+    return null;
+  }
+
+  chart(seed, n, vol, trend, W, H) {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1);
+      const v = (Math.sin(i * 1.7 + seed) * 0.6 + Math.sin(i * 0.53 + seed * 0.7) * 0.9 + Math.sin(i * 3.1 + seed * 1.3) * 0.28) * vol + t * trend;
+      pts.push({ x: t * W, v });
+    }
+    const vs = pts.map((p) => p.v), lo = Math.min(...vs), span = (Math.max(...vs) - lo) || 1;
+    const xy = pts.map((p) => ({ x: p.x, y: 4 + (1 - (p.v - lo) / span) * (H - 8) }));
+    let line = 'M' + xy[0].x.toFixed(1) + ' ' + xy[0].y.toFixed(1);
+    for (let i = 1; i < xy.length; i++) { const a = xy[i - 1], b = xy[i]; line += ' Q' + a.x.toFixed(1) + ' ' + a.y.toFixed(1) + ' ' + ((a.x + b.x) / 2).toFixed(1) + ' ' + ((a.y + b.y) / 2).toFixed(1); }
+    const l = xy[xy.length - 1]; line += ' L' + l.x.toFixed(1) + ' ' + l.y.toFixed(1);
+    return { line, area: line + ' L' + W + ' ' + H + ' L0 ' + H + ' Z' };
+  }
+
+  openConfirm(run) {
+    this._run = run; this.setState({ confirmOpen: true });
+    clearTimeout(this._c); this._c = setTimeout(() => this.runConfirm(), 1400);
+  }
+  runConfirm() { clearTimeout(this._c); if (!this.state.confirmOpen) return; this.setState({ confirmOpen: false }); this._run && this._run(); }
+
+  startStatus(cfg) {
+    const id = 'n' + Date.now();
+    const item = { id, t: cfg.t, title: cfg.actTitle, sub: cfg.actSub, amt: cfg.actAmt, status: cfg.pendingStatus, day: 'HEUTE', time: '09:41', fee: cfg.fee };
+    this.setState((s) => ({ screen: 'status', status: { ...cfg, done: false }, activity: [item].concat(s.activity), txSel: id }));
+    clearTimeout(this._s);
+    this._s = setTimeout(() => this.setState((s) => ({ status: s.status && { ...s.status, done: true }, activity: s.activity.map((a) => a.id === id ? { ...a, status: 'Bestätigt' } : a) })), 2600);
+  }
+
+  pinPress(k) {
+    const S = this.state;
+    if (k === 'del') return this.setState({ pin: S.pin.slice(0, -1), pinError: '' });
+    if (k === 'bio') { if (S.pinMode === 'unlock' && S.faceId) this.setState({ screen: 'home', tab: 'home', pin: '' }); return; }
+    if (!k || S.pin.length >= 6) return;
+    const p = S.pin + k;
+    this.setState({ pin: p, pinError: '' });
+    if (p.length === 6) { clearTimeout(this._p); this._p = setTimeout(() => this.pinDone(p), 200); }
+  }
+  pinDone(p) {
+    const S = this.state;
+    if (S.pinMode === 'set') return this.setState({ pinFirst: p, pin: '', pinMode: 'confirm' });
+    if (S.pinMode === 'confirm') {
+      if (p === S.pinFirst) return this.setState({ screen: 'bio', pin: '' });
+      return this.setState({ pinMode: 'set', pin: '', pinFirst: '', pinError: 'PINs stimmen nicht überein. Bitte neu festlegen.' });
+    }
+    if (S.pinFirst && p !== S.pinFirst) return this.setState({ pin: '', pinError: 'Falsche PIN. Noch 4 Versuche.' });
+    if (S.pinMode === 'unlock') return this.setState({ screen: 'home', tab: 'home', pin: '' });
+    if (S.pinMode === 'reveal') return this.setState({ screen: 'reveal', pin: '' });
+  }
+
+  renderVals() {
+    const S = this.state, P = this.props;
+    const cur = S.currency, rate = RATES[cur];
+    const fiat = (eur) => eur == null ? '–' : new Intl.NumberFormat('de-DE', { style: 'currency', currency: cur }).format(eur * rate);
+    const pc = (c) => c == null ? '' : (c >= 0 ? '+' : '−') + nf(Math.abs(c), 2) + ' %';
+    const set = (o) => () => this.setState(o);
+    const go = (screen, o) => () => this.setState({ screen, ...(o || {}) });
+    const e = React.createElement;
+    const chip = (on) => ({ bg: on ? INK : '#141418', ink: on ? '#000000' : MUT });
+    const div = (i) => i === 0 ? 'transparent' : 'rgba(255,255,255,.06)';
+    const tag = (a) => a.unverified ? { tag: 'NICHT VERIFIZIERT', tagInk: WARN, tagBg: 'rgba(232,196,106,.14)' } : { tag: a.net.toUpperCase(), tagInk: MUT, tagBg: 'rgba(255,255,255,.06)' };
+    const A = (id) => ASSETS.find((a) => a.id === id);
+    const scr = S.screen;
+    const on = {}; ['welcome', 'warn', 'seed', 'verify', 'import', 'pin', 'bio', 'home', 'markets', 'coin', 'receive', 'sendAsset', 'sendTo', 'sendAmt', 'sendReview', 'swap', 'swapReview', 'status', 'activity', 'tx', 'settings', 'rpc', 'reveal'].forEach((k) => { on[k] = scr === k; });
+
+    const backMap = { warn: 'welcome', seed: 'warn', verify: 'seed', import: 'welcome', coin: S.tab, receive: S.tab, sendAsset: S.tab, sendTo: 'sendAsset', sendAmt: 'sendTo', sendReview: 'sendAmt', swap: S.tab, swapReview: 'swap', tx: 'activity', rpc: 'settings', reveal: 'settings' };
+    const back = () => {
+      if (scr === 'pin') return this.setState({ screen: S.pinMode === 'reveal' ? 'settings' : (S.flow === 'import' ? 'import' : 'verify'), pin: '', pinError: '', pinMode: S.pinMode === 'reveal' ? 'unlock' : 'set', pinFirst: S.pinMode === 'reveal' ? S.pinFirst : '' });
+      this.setState({ screen: backMap[scr] || 'home', slipOpen: false });
+    };
+    const lockNow = () => this.setState({ screen: 'pin', pinMode: 'unlock', pin: '', pinError: '' });
+    const startSend = (id) => this.setState({ screen: id ? 'sendTo' : 'sendAsset', sAsset: id || S.sAsset, sTo: '', sAmt: '', sFiat: false, sFee: 1 });
+    const startRecv = (sym) => this.setState({ screen: 'receive', rcvAsset: sym, rcvNet: RCV[sym][0] });
+    const startSwap = (id) => this.setState({ screen: 'swap', swFrom: id && SWAPPABLE.includes(id) ? id : S.swFrom, swTo: id === 'eth-base' || !id ? S.swTo : (id === 'usdc-base' ? 'eth-base' : famOf(A(id).net) === 'sol' ? (id === 'sol-sol' ? 'jup-sol' : 'sol-sol') : 'usdc-base'), quoteT: 30 });
+
+    const jumps = [['Onboarding', 'welcome'], ['Sperre', 'lock'], ['Portfolio', 'home'], ['Märkte', 'markets'], ['Empfangen', 'receive'], ['Senden', 'sendAsset'], ['Swap', 'swap'], ['Aktivität', 'activity'], ['Einstellungen', 'settings']].map(([label, k]) => {
+      const active = k === 'lock' ? (scr === 'pin' && S.pinMode === 'unlock') : scr === k;
+      return {
+        label, bg: active ? '#101014' : 'rgba(16,16,20,.07)', ink: active ? '#FFFFFF' : '#101014',
+        onClick: () => {
+          if (k === 'lock') return lockNow();
+          if (k === 'welcome') return this.setState({ screen: 'welcome', checks: [false, false, false], seedShown: false, picks: {}, pin: '', pinFirst: '', pinMode: 'set' });
+          if (k === 'sendAsset') return startSend();
+          if (k === 'swap') return startSwap();
+          this.setState({ screen: k, tab: ['home', 'markets', 'activity', 'settings'].includes(k) ? k : S.tab });
+        }
+      };
+    });
+
+    const checkEl = this.icon('check', '#FFFFFF', 14, 3);
+    const warnTexts = ['Wer die Wörter kennt, besitzt das Geld.', 'Anthea kann sie nicht wiederherstellen.', 'Ich bewahre sie offline und sicher auf.'];
+    const warnRows = warnTexts.map((text, i) => ({
+      text, boxBg: S.checks[i] ? IND : '#2A2A32', check: S.checks[i] ? checkEl : null,
+      onClick: () => this.setState((s) => { const c = s.checks.slice(); c[i] = !c[i]; return { checks: c }; })
+    }));
+    const warnOk = S.checks.every(Boolean);
+
+    const seedWordsPlain = SEED.map((w, i) => ({ n: i + 1, w }));
+    const verifyRows = VERIFY.map((v) => ({
+      pos: v.pos,
+      opts: v.opts.map((w) => {
+        const picked = S.picks[v.pos] === w, right = SEED[v.pos - 1] === w;
+        return { w, bg: picked ? (right ? IND : 'rgba(255,143,128,.18)') : '#141418', ink: picked ? (right ? '#FFFFFF' : NEG) : INK, onClick: () => this.setState((s) => ({ picks: { ...s.picks, [v.pos]: w } })) };
+      })
+    }));
+    const verifyOk = VERIFY.every((v) => S.picks[v.pos] === SEED[v.pos - 1]);
+
+    const iw = S.importText.normalize('NFKD').toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const endsSpace = /\s$/.test(S.importText);
+    const partial = !endsSpace && iw.length ? iw[iw.length - 1] : '';
+    const complete = endsSpace ? iw : iw.slice(0, -1);
+    const bad = complete.find((w) => !WORDS.includes(w)) || (iw.length === 12 && !WORDS.includes(iw[11]) ? iw[11] : null);
+    const importValid = (iw.length === 12 || iw.length === 24) && !bad && iw.every((w) => WORDS.includes(w));
+    const importMsg = bad ? '„' + bad + '“ ist kein gültiges BIP39-Wort' : importValid ? 'Prüfsumme gültig' : iw.length + ' / 12 Wörter';
+    const importSugg = partial ? WORDS.filter((w, i, arr) => arr.indexOf(w) === i && w.startsWith(partial) && w !== partial).slice(0, 5).map((w) => ({
+      w, onClick: () => this.setState((s) => ({ importText: s.importText.replace(/\S+$/, w) + ' ' }))
+    })) : [];
+
+    const pinTitles = { set: 'PIN festlegen', confirm: 'PIN bestätigen', unlock: 'Anthea ist gesperrt', reveal: 'PIN eingeben' };
+    const pinSubs = { set: '6 Ziffern. Sie schützt dein Wallet auf diesem Gerät.', confirm: 'Gib die PIN noch einmal ein.', unlock: S.faceId ? 'PIN eingeben oder Face ID nutzen.' : 'PIN eingeben.', reveal: 'Für die Phrase ist die PIN nötig. Face ID reicht hier nicht.' };
+    const pinDots = [0, 1, 2, 3, 4, 5].map((i) => ({ bg: i < S.pin.length ? IND : '#2A2A32' }));
+    const showBio = S.pinMode === 'unlock' && S.faceId;
+    const pinKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', showBio ? 'bio' : '', '0', 'del'].map((k) => ({
+      label: k === 'bio' || k === 'del' ? '' : k,
+      icon: k === 'bio' ? this.icon('faceid', ACC, 28, 1.8) : k === 'del' ? this.icon('del', INK, 24, 1.9) : null,
+      bg: k && k !== 'bio' && k !== 'del' ? '#141418' : 'transparent',
+      onClick: () => this.pinPress(k)
+    }));
+
+    const known = ASSETS.filter((a) => a.price != null);
+    const totalEur = known.reduce((s, a) => s + a.bal * a.price, 0);
+    const deltaEur = known.reduce((s, a) => s + a.bal * a.price * a.chg / 100, 0);
+    const hDefs = { '24H': [1, 1.1, 1], '7D': [1.4, 2.2, 4.2], '30D': [1.8, -3.4, -2.6], '1J': [2.4, 6, 41.8] };
+    const hd = hDefs[S.hRange];
+    const hPct = S.hRange === '24H' ? deltaEur / totalEur * 100 : hd[2];
+    const hChart = this.chart(S.hRange.charCodeAt(0) + S.hRange.length * 7, 44, hd[0], hd[1], 300, 64);
+    const hRanges = Object.keys(hDefs).map((r) => ({ label: r, bg: r === S.hRange ? '#2A2A32' : 'transparent', ink: r === S.hRange ? INK : MUT, onClick: set({ hRange: r }) }));
+
+    const actions = [
+      { label: 'Senden', k: 'send', primary: true, onClick: () => startSend() },
+      { label: 'Empfangen', k: 'recv', onClick: () => startRecv(S.rcvAsset) },
+      { label: 'Swappen', k: 'swap', onClick: () => startSwap() }
+    ].map((a) => ({ label: a.label, bg: a.primary ? IND : '#141418', icon: this.icon(a.k, '#FFFFFF', 26, 2.6), onClick: a.onClick }));
+
+    const nets = ['Alle'].concat(ASSETS.map((a) => a.net).filter((n, i, arr) => arr.indexOf(n) === i));
+    const netChips = nets.map((n) => ({ label: n, ...chip(S.netFilter === n), onClick: set({ netFilter: n }) }));
+    const holdRow = (a) => ({
+      ...a, ...tag(a),
+      sub: nf(a.bal, a.dec) + ' ' + a.sym + (a.pending ? ' · ' + nf(a.pending, 5) + ' unbestätigt' : ''),
+      value: a.price == null ? '–' : fiat(a.bal * a.price),
+      chg: a.price == null ? 'Kein Preis' : pc(a.chg), chgInk: a.chg == null ? MUT : a.chg >= 0 ? POS : NEG
+    });
+    const holdings = ASSETS.filter((a) => S.netFilter === 'Alle' || a.net === S.netFilter).map((a) => ({
+      ...holdRow(a),
+      onClick: () => a.coin ? this.setState({ screen: 'coin', coin: a.coin, cRange: '24H' }) : this.flash('Nicht verifizierter Token. Kein Marktpreis verfügbar.')
+    }));
+
+    const q = S.mSearch.trim().toLowerCase();
+    const coinList = COINS.map((c, i) => ({ ...c, rank: i + 1 })).filter((c) => (S.mTab === 'Top' || S.watch.includes(c.id)) && (!q || c.name.toLowerCase().includes(q) || c.sym.toLowerCase().includes(q)));
+    const coins = coinList.map((c) => ({
+      ...c, price: fiat(c.price), chg: pc(c.chg), chgInk: c.chg >= 0 ? POS : NEG,
+      spark: this.chart(c.id.charCodeAt(0) + c.id.length, 20, 1, c.chg, 64, 24).line,
+      onClick: () => this.setState({ screen: 'coin', coin: c.id, cRange: '24H' })
+    }));
+    const mTabs = ['Top', 'Watchlist'].map((t) => ({ label: t, ...chip(S.mTab === t), onClick: set({ mTab: t }) }));
+
+    const C = COINS.find((c) => c.id === S.coin) || COINS[1];
+    const cDefs = { '1H': [0.5, 0.3, 0.21], '24H': [1, 1, C.chg], '7D': [1.4, 2.2, 6.4], '30D': [1.8, -3, -3.8], '1J': [2.4, 6, 48.2] };
+    const cd = cDefs[S.cRange];
+    const cChart = this.chart(C.id.charCodeAt(0) * 3 + S.cRange.length * 11, 52, cd[0], cd[1] * (cd[2] < 0 ? -1 : 1) * Math.sign(cd[1] || 1), 300, 120);
+    const inWatch = S.watch.includes(C.id);
+    const coinAsset = C.asset;
+
+    const rNets = RCV[S.rcvAsset] || ['Ethereum'];
+    const rNet = rNets.includes(S.rcvNet) ? S.rcvNet : rNets[0];
+    const rFam = famOf(rNet), rAddr = ADDR[rFam];
+    const qr = [];
+    const N = 29, seedQ = rAddr.split('').reduce((s, ch) => s + ch.charCodeAt(0), 0);
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      let f = -1;
+      for (const [r0, c0] of [[0, 0], [0, N - 7], [N - 7, 0]]) if (r >= r0 && r < r0 + 7 && c >= c0 && c < c0 + 7) f = (r === r0 || r === r0 + 6 || c === c0 || c === c0 + 6 || (r >= r0 + 2 && r <= r0 + 4 && c >= c0 + 2 && c <= c0 + 4)) ? 1 : 0;
+      if (f >= 0) { qr.push(f ? '#000000' : INK); continue; }
+      const h = Math.sin(r * 12.9898 + c * 78.233 + seedQ) * 43758.5453;
+      qr.push(!(r > 10 && r < 18 && c > 10 && c < 18) && (h - Math.floor(h)) > 0.5 ? '#000000' : INK);
+    }
+
+    const sA = A(S.sAsset) || ASSETS[2];
+    const sFam = famOf(sA.net);
+    const fees = FEES[sFam === 'evm' ? (sA.net === 'Ethereum' ? 'eth' : 'l2') : sFam];
+    const fee = fees[S.sFee];
+    const amtNum = parseFloat((S.sAmt || '0').replace(',', '.')) || 0;
+    const canFiat = sA.price != null;
+    const tokenAmt = S.sFiat && canFiat ? amtNum / (sA.price * rate) : amtNum;
+    const native = ['ETH', 'SOL', 'BTC'].includes(sA.sym);
+    const over = tokenAmt > sA.bal;
+    const amtValid = tokenAmt > 0 && !over;
+    const validate = (addr) => {
+      if (!addr) return null;
+      const a = addr.trim();
+      const isEvm = /^0x[0-9a-fA-F]{40}$/.test(a), isBtc = /^(bc1|tb1)[0-9a-z]{20,80}$/.test(a), isSol = !isEvm && !isBtc && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
+      const fam = isEvm ? 'evm' : isBtc ? 'btc' : isSol ? 'sol' : null;
+      const names = { evm: 'EVM', btc: 'Bitcoin', sol: 'Solana' };
+      if (!fam) return { kind: 'err', text: 'Ungültige Adresse.' };
+      if (fam !== sFam) return { kind: 'err', text: 'Das ist eine ' + names[fam] + '-Adresse. ' + sA.sym + ' wird hier über ' + sA.net + ' gesendet.' };
+      if (a === ADDR[sFam]) return { kind: 'err', text: 'Das ist deine eigene Adresse.' };
+      if (a === RECENT[sFam]) return { kind: 'ok', text: 'Bekannter Empfänger · zuletzt am 12. Sep.' };
+      const r = RECENT[sFam];
+      if (a.slice(0, 6) === r.slice(0, 6) && a.slice(-4) === r.slice(-4)) return { kind: 'warn', text: 'Ähnelt einer Adresse aus deinem Verlauf, ist aber nicht identisch. Möglicher Address-Poisoning-Angriff. Prüfe jedes Zeichen.' };
+      return { kind: 'info', text: 'Erstmaliger Empfänger. Prüfe die Adresse sorgfältig.' };
+    };
+    const msgStyle = { ok: [POS, 'rgba(168,230,168,.1)'], info: [ACC, 'rgba(108,92,231,.12)'], warn: ['#F2DDA4', 'rgba(232,196,106,.12)'], err: [NEG, 'rgba(255,143,128,.1)'] };
+    const v = validate(S.sTo);
+    const toMsg = v ? { text: v.text, ink: msgStyle[v.kind][0], bg: msgStyle[v.kind][1] } : null;
+    const toValid = v && v.kind !== 'err';
+    const amtInfo = over ? 'Nicht genug ' + sA.sym + ' · Guthaben ' + nf(sA.bal, sA.dec) : tokenAmt > sA.bal * 0.5 ? 'Mehr als 50 % deines Guthabens' : 'Guthaben ' + nf(sA.bal, sA.dec) + ' ' + sA.sym;
+    const amtKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', 'del'].map((k) => ({
+      label: k === 'del' ? '' : k, icon: k === 'del' ? this.icon('del', INK, 22, 1.9) : null,
+      onClick: () => this.setState((s) => {
+        let a = s.sAmt;
+        if (k === 'del') a = a.slice(0, -1);
+        else if (k === ',') { if (!a.includes(',')) a = (a || '0') + ','; }
+        else if (a.length < 12) a = a === '0' ? k : a + k;
+        return { sAmt: a };
+      })
+    }));
+    const feeOpts = fees.map((f, i) => ({ label: f.l, time: f.t, cost: fiat(f.eur), ring: i === S.sFee ? IND : 'transparent', onClick: set({ sFee: i }) }));
+    const revWarns = [];
+    if (v && v.kind === 'warn') revWarns.push({ text: v.text, ink: msgStyle.warn[0], bg: msgStyle.warn[1] });
+    if (v && v.kind === 'info') revWarns.push({ text: v.text, ink: msgStyle.info[0], bg: msgStyle.info[1] });
+    if (tokenAmt > sA.bal * 0.5 && !over) revWarns.push({ text: 'Du sendest mehr als 50 % deines Guthabens.', ink: msgStyle.info[0], bg: msgStyle.info[1] });
+    const tokenFiat = canFiat ? tokenAmt * sA.price : null;
+    const revRows = [
+      { k: 'Netzwerk', v: sA.net + (P.testnet ? ' (Testnetz)' : '') },
+      { k: 'Von', v: short(ADDR[sFam]) },
+      { k: 'An', v: S.sTo.trim() },
+      { k: 'Netzwerkgebühr', v: fiat(fee.eur) + ' · ' + fee.l },
+      { k: 'Gesamt', v: canFiat ? fiat(tokenFiat + fee.eur) : nf(tokenAmt, sA.dec) + ' ' + sA.sym + ' + ' + fiat(fee.eur) },
+      { k: 'Simulation', v: 'Erfolgreich', ink: POS }
+    ].map((r, i) => ({ ink: INK, ...r, divider: div(i) }));
+    const confirmCta = S.faceId ? 'Mit Face ID bestätigen' : 'Mit PIN bestätigen';
+
+    const F = A(S.swFrom), T = A(S.swTo);
+    const fFam = famOf(F.net), tFam = famOf(T.net);
+    const cross = F.net !== T.net;
+    const provider = fFam === 'sol' && tFam === 'sol' ? 'Jupiter' : 'LI.FI';
+    const swAmtN = F.bal * S.swPct / 100;
+    const impact = 0.05 + S.swPct / 100 * 3.2;
+    const outN = swAmtN * F.price * (1 - impact / 100) / T.price;
+    const minOut = outN * (1 - S.slip / 100);
+    const swFee = cross ? 0.91 : fFam === 'sol' ? 0.004 : F.net === 'Ethereum' ? 1.6 : 0.06;
+    const route = cross ? provider + ' · ' + F.net + ' → ' + T.net : provider + ' · ' + F.net;
+    const quoteRows = [
+      { k: 'Kurs', v: '1 ' + F.sym + ' = ' + nf(F.price / T.price, T.dec) + ' ' + T.sym },
+      { k: 'Mindestempfang', v: nf(minOut, T.dec) + ' ' + T.sym },
+      { k: 'Preisauswirkung', v: nf(impact, 2) + ' %', ink: impact > 3 ? WARN : INK },
+      { k: cross ? 'Netzwerk + Brücke' : 'Netzwerkgebühr', v: fiat(swFee) },
+      { k: 'Route', v: route },
+      { k: 'Dauer', v: cross ? '~2 min' : '~15 s' }
+    ].map((r, i) => ({ ink: INK, ...r, divider: div(i) }));
+    const cycle = (cur, other) => { const i = SWAPPABLE.indexOf(cur); for (let j = 1; j <= SWAPPABLE.length; j++) { const n = SWAPPABLE[(i + j) % SWAPPABLE.length]; if (n !== other) return n; } return cur; };
+    const pctChips = [25, 50, 75, 100].map((p) => ({ label: p === 100 ? 'Max' : p + ' %', bg: S.swPct === p ? 'rgba(108,92,231,.16)' : '#141418', ink: S.swPct === p ? ACC : MUT, onClick: set({ swPct: p }) }));
+    const slipOpts = [0.1, 0.5, 1, 3].map((s) => ({ label: nf(s, 1) + ' %', bg: S.slip === s ? IND : '#1E1E23', ink: S.slip === s ? '#FFFFFF' : INK, onClick: set({ slip: s }) }));
+    const needsApprove = fFam === 'evm' && F.sym !== 'ETH';
+    const swapSteps = (needsApprove ? [{ title: 'Freigabe · exakt ' + nf(swAmtN, 2) + ' ' + F.sym, sub: 'Keine unbegrenzte Freigabe' }] : []).concat([{ title: 'Swap ' + F.sym + ' → ' + T.sym, sub: route }]).map((s, i) => ({ ...s, n: i + 1 }));
+    const swapRevRows = [
+      { k: 'Du zahlst', v: nf(swAmtN, F.dec) + ' ' + F.sym },
+      { k: 'Du erhältst (erwartet)', v: nf(outN, T.dec) + ' ' + T.sym },
+      { k: 'Mindestempfang', v: nf(minOut, T.dec) + ' ' + T.sym },
+      { k: 'Gebühren', v: fiat(swFee) + ' · Integrator 0 %' },
+      { k: 'Vertrag', v: provider === 'Jupiter' ? 'Jupiter-Programm · Allowlist' : 'LI.FI Diamond · Allowlist', ink: POS },
+      { k: 'Simulation', v: 'Erfolgreich', ink: POS }
+    ].map((r, i) => ({ ink: INK, ...r, divider: div(i) }));
+
+    const st = S.status || {};
+    const stDone = !!st.done;
+    const stIcon = stDone ? this.icon('check', '#FFFFFF', 42, 3) : e('span', { style: { width: 44, height: 44, borderRadius: '50%', border: '4px solid rgba(167,155,255,.25)', borderTopColor: ACC, animation: 'antheaSpin .9s linear infinite' } });
+
+    const stColors = { 'Bestätigt': [POS, 'rgba(168,230,168,.1)'], 'Ausstehend': [WARN, 'rgba(232,196,106,.12)'], 'Unbestätigt': [WARN, 'rgba(232,196,106,.12)'], 'Unterwegs': [ACC, 'rgba(108,92,231,.14)'] };
+    const activity = S.activity.map((a, i, arr) => ({
+      ...a, showHeader: i === 0 || arr[i - 1].day !== a.day,
+      icon: this.icon(a.t === 'recv' ? 'recv' : a.t === 'send' ? 'send' : 'swap', a.t === 'recv' ? POS : ACC, 19, 2.4),
+      amtInk: a.amt[0] === '+' ? POS : INK,
+      stInk: (stColors[a.status] || [MUT])[0], stBg: (stColors[a.status] || [MUT, 'rgba(255,255,255,.06)'])[1],
+      onClick: () => this.setState({ screen: 'tx', txSel: a.id })
+    }));
+    const tx = activity.find((a) => a.id === S.txSel) || activity[0];
+    const txRows = [
+      { k: 'Status', v: tx.status, ink: tx.stInk },
+      { k: 'Details', v: tx.sub },
+      { k: 'Gebühr', v: tx.fee },
+      { k: 'Zeit', v: (tx.day === 'HEUTE' ? 'Heute' : 'Gestern') + ', ' + tx.time },
+      { k: 'Tx-Hash', v: '0x8f3a…c21d' }
+    ].map((r, i) => ({ ink: INK, ...r, divider: div(i) }));
+
+    const navDefs = [['home', 'Portfolio'], ['markets', 'Märkte'], ['activity', 'Aktivität'], ['settings', 'Einstellungen']].map(([k, label]) => ({
+      label, icon: this.icon(k, S.tab === k ? IND : MUT), ink: S.tab === k ? ACC : MUT, onClick: () => this.setState({ screen: k, tab: k })
+    }));
+
+    const rpcs = [['Ethereum', 'ethereum-rpc.publicnode.com'], ['Arbitrum One', 'arbitrum-one-rpc.publicnode.com'], ['Optimism', 'optimism-rpc.publicnode.com'], ['Base', 'base-rpc.publicnode.com'], ['Polygon PoS', 'polygon-bor-rpc.publicnode.com'], ['BNB Smart Chain', 'bsc-rpc.publicnode.com'], ['Solana', 'solana-rpc.publicnode.com'], ['Bitcoin', 'mempool.space/api · Esplora']].map(([net, url], i) => ({ net, url, fb: i === 7 ? '+1 Fallback' : '+2 Fallbacks', divider: div(i) }));
+
+    return {
+      on, jumps, back, lockNow, testnet: !!P.testnet,
+      startCreate: () => this.setState({ screen: 'warn', flow: 'create', checks: [false, false, false], seedShown: false, picks: {} }),
+      startImport: () => this.setState({ screen: 'import', flow: 'import', importText: '' }),
+      warnRows, warnOpacity: warnOk ? 1 : 0.4, warnNext: () => warnOk && this.setState({ screen: 'seed' }),
+      seedWords: seedWordsPlain, seedWordsPlain, seedHidden: !S.seedShown, seedBlur: S.seedShown ? 'none' : 'blur(9px)',
+      revealSeed: set({ seedShown: true }), seedOpacity: S.seedShown ? 1 : 0.4, seedNext: () => S.seedShown && this.setState({ screen: 'verify', picks: {} }),
+      verifyRows, verifyOpacity: verifyOk ? 1 : 0.4, verifyNext: () => verifyOk && this.setState({ screen: 'pin', pinMode: 'set', pin: '', pinFirst: '', pinError: '' }),
+      importText: S.importText, onImport: (ev) => this.setState({ importText: ev.target.value }),
+      importMsg, importInk: bad ? NEG : importValid ? POS : MUT, importSugg,
+      importDemo: set({ importText: SEED.join(' ') }), importOpacity: importValid ? 1 : 0.4,
+      importNext: () => importValid && this.setState({ screen: 'pin', pinMode: 'set', pin: '', pinFirst: '', pinError: '' }),
+      pinTitle: pinTitles[S.pinMode], pinSub: pinSubs[S.pinMode], pinDots, pinKeys, pinError: S.pinError, pinCanBack: S.pinMode !== 'unlock',
+      bioYes: () => { this.setState({ faceId: true, screen: 'home', tab: 'home' }); this.flash(S.flow === 'import' ? 'Konten abgeleitet · Bitcoin-Scan abgeschlossen' : 'Wallet bereit'); },
+      bioNo: () => { this.setState({ faceId: false, screen: 'home', tab: 'home' }); this.flash('Wallet bereit'); },
+      total: fiat(totalEur), totalDelta: pc(hPct), totalDeltaInk: hPct < 0 ? NEG : ACC,
+      totalAbs: (hPct < 0 ? '−' : '+') + fiat(Math.abs(totalEur * hPct / 100)), hRangeLabel: S.hRange === '24H' ? '24 Std.' : S.hRange,
+      hChart, hRanges, actions, netChips, holdings, privacyBlur: P.privacyMode ? 'blur(10px)' : 'none',
+      goScan: () => startSend(), goSwap: () => startSwap(), goHome: () => this.setState({ screen: 'home', tab: 'home' }),
+      mSearch: S.mSearch, onSearch: (ev) => this.setState({ mSearch: ev.target.value }), mTabs, coins,
+      coinsEmpty: coins.length === 0, coinsEmptyText: S.mTab === 'Watchlist' && !q ? 'Noch keine Favoriten. Markiere Coins in der Detailansicht mit dem Stern.' : 'Keine Treffer.',
+      coin: { ...C, price: fiat(C.price) }, cChart,
+      cChartDelta: pc(cd[2]), cChartInk: cd[2] < 0 ? NEG : ACC, cRangeLabel: 'Zeitraum ' + S.cRange + ' · Live',
+      cRanges: Object.keys(cDefs).map((r) => ({ label: r, bg: r === S.cRange ? '#2A2A32' : 'transparent', ink: r === S.cRange ? INK : MUT, onClick: set({ cRange: r }) })),
+      coinStats: [{ k: 'MARKTKAP.', v: C.cap }, { k: 'VOLUMEN 24H', v: C.vol }, { k: 'HOCH 24H', v: fiat(C.hi) }, { k: 'TIEF 24H', v: fiat(C.lo) }],
+      starIcon: this.icon('star', inWatch ? WARN : INK, inWatch ? 1 : 0),
+      toggleWatch: () => { this.setState((s) => ({ watch: inWatch ? s.watch.filter((x) => x !== C.id) : s.watch.concat(C.id) })); this.flash(inWatch ? 'Aus Watchlist entfernt' : 'Zur Watchlist hinzugefügt'); },
+      coinSupported: C.supported !== false, coinUnsupported: C.supported === false,
+      coinReceive: () => startRecv(C.sym),
+      coinSend: () => coinAsset ? startSend(coinAsset) : this.flash('Kein ' + C.sym + '-Guthaben vorhanden'),
+      coinSwap: () => coinAsset && SWAPPABLE.includes(coinAsset) ? startSwap(coinAsset) : this.flash(C.sym === 'BTC' ? 'Bitcoin-Swaps folgen in einer späteren Version' : 'Kein ' + C.sym + '-Guthaben vorhanden'),
+      rcvAssets: Object.keys(RCV).map((s) => ({ label: s, ...chip(S.rcvAsset === s), onClick: set({ rcvAsset: s, rcvNet: RCV[s][0] }) })),
+      rcvNets: rNets.map((n) => ({ label: n, bg: n === rNet ? 'rgba(108,92,231,.18)' : '#141418', ink: n === rNet ? ACC : MUT, onClick: set({ rcvNet: n }) })),
+      qr, rcvAddr: rAddr.match(/.{1,4}/g).join(' '),
+      rcvNote: rFam === 'btc' ? 'Native SegWit · nach Nutzung neue Adresse' : rFam === 'evm' ? 'Gleiche Adresse auf allen EVM-Netzen' : 'Solana-Adresse',
+      rcvWarn: 'Sende nur ' + S.rcvAsset + ' über ' + rNet + ' an diese Adresse. Andere Netzwerke können zum Verlust führen.',
+      copyAddr: () => this.flash('Adresse kopiert'), shareAddr: () => this.flash('Teilen geöffnet'),
+      sendAssets: ASSETS.map((a) => ({ ...holdRow(a), onClick: () => startSend(a.id) })),
+      sendHead: sA.sym + ' über ' + sA.net, sTo: S.sTo, onTo: (ev) => this.setState({ sTo: ev.target.value.replace(/\s/g, '') }),
+      toPlaceholder: sFam === 'evm' ? '0x… Adresse' : sFam === 'sol' ? 'Solana-Adresse' : 'bc1… Adresse',
+      pasteTo: set({ sTo: POISON[sFam] }), scanTo: () => { this.setState({ sTo: FRESH[sFam] }); this.flash('QR-Code erkannt'); },
+      toMsg, recents: [{ short: short(RECENT[sFam]), note: 'Zuletzt am 12. Sep', onClick: set({ sTo: RECENT[sFam] }) }],
+      toOpacity: toValid ? 1 : 0.4, toNext: () => toValid && this.setState({ screen: 'sendAmt' }),
+      toShort: short(S.sTo.trim()),
+      amtMain: S.sAmt || '0', amtUnit: S.sFiat && canFiat ? cur : sA.sym,
+      amtAlt: S.sFiat && canFiat ? nf(tokenAmt, sA.dec) + ' ' + sA.sym : fiat(tokenFiat),
+      toggleFiat: () => canFiat && this.setState({ sFiat: !S.sFiat, sAmt: '' }),
+      setMax: () => { const m = Math.max(0, native ? sA.bal - fee.eur / sA.price : sA.bal); this.setState({ sFiat: false, sAmt: m.toFixed(sA.dec).replace('.', ',') }); },
+      amtInfo, amtInfoInk: over ? NEG : MUT, amtKeys, feeOpts, amtOpacity: amtValid ? 1 : 0.4,
+      amtNext: () => amtValid && this.setState({ screen: 'sendReview' }),
+      revAmount: nf(tokenAmt, sA.dec) + ' ' + sA.sym, revFiat: canFiat ? fiat(tokenFiat) : 'Kein Marktpreis', revRows, revWarns, confirmCta,
+      sendConfirm: () => this.openConfirm(() => this.startStatus({
+        title: 'Wird gesendet', doneTitle: 'Gesendet', sub: nf(tokenAmt, sA.dec) + ' ' + sA.sym + ' an ' + short(S.sTo.trim()),
+        rows: [{ k: 'Netzwerk', v: sA.net }, { k: 'Gebühr', v: fiat(fee.eur) }, { k: 'Tx-Hash', v: '0x8f3a…c21d' }],
+        t: 'send', actTitle: 'Gesendet', actSub: sA.net + ' · ' + short(S.sTo.trim()), actAmt: '−' + nf(tokenAmt, sA.dec) + ' ' + sA.sym, pendingStatus: 'Ausstehend', fee: fiat(fee.eur)
+      })),
+      slipLabel: nf(S.slip, 1) + ' %', openSlip: set({ slipOpen: true }), closeSlip: set({ slipOpen: false }), slipOpen: S.slipOpen, slipOpts, slipWarn: S.slip > 1,
+      swF: { ...F, balLabel: nf(F.bal, F.dec) }, swT: T, swAmt: nf(swAmtN, F.dec), swAmtFiat: fiat(swAmtN * F.price), swOut: nf(outN, T.dec),
+      quoteLeft: 'Quote ' + S.quoteT + ' s', quoteBar: S.quoteT / 30 * 100, quoteRows, impactWarn: impact > 3, pctChips,
+      cycleFrom: set({ swFrom: cycle(S.swFrom, S.swTo), quoteT: 30 }), cycleTo: set({ swTo: cycle(S.swTo, S.swFrom), quoteT: 30 }),
+      flipSwap: set({ swFrom: S.swTo, swTo: S.swFrom, quoteT: 30 }),
+      swapNext: set({ screen: 'swapReview' }), swapSteps, swapRevRows,
+      swapConfirm: () => this.openConfirm(() => this.startStatus({
+        title: cross ? 'Swap unterwegs' : 'Swap läuft', doneTitle: cross ? 'Angekommen' : 'Swap abgeschlossen',
+        sub: nf(swAmtN, F.dec) + ' ' + F.sym + ' → ' + nf(outN, T.dec) + ' ' + T.sym,
+        rows: [{ k: 'Route', v: route }, { k: 'Mindestempfang', v: nf(minOut, T.dec) + ' ' + T.sym }, { k: 'Gebühr', v: fiat(swFee) }],
+        t: 'swap', actTitle: F.sym + ' → ' + T.sym, actSub: route, actAmt: '+' + nf(outN, T.dec) + ' ' + T.sym, pendingStatus: cross ? 'Unterwegs' : 'Ausstehend', fee: fiat(swFee)
+      })),
+      stBg: stDone ? IND : '#141418', stIcon, stTitle: stDone ? st.doneTitle : st.title, stSub: st.sub || '',
+      stRows: (st.rows || []).map((r, i) => ({ ink: INK, ...r, divider: div(i) })),
+      openExplorer: () => this.flash('Explorer im Browser geöffnet'),
+      activity, tx, txRows,
+      currency: cur, cycleCur: () => { const k = Object.keys(RATES); this.setState({ currency: k[(k.indexOf(cur) + 1) % k.length] }); },
+      goRpc: go('rpc'), rpcs, addRpc: () => this.flash('Nur HTTPS-Endpunkte werden akzeptiert'),
+      tokensInfo: () => this.flash('Token per Vertragsadresse hinzufügen'),
+      changePin: () => this.flash('Alte PIN prüfen, dann neue festlegen'),
+      faceBg: S.faceId ? IND : '#2A2A32', faceKnob: S.faceId ? 23 : 3, toggleFace: set({ faceId: !S.faceId }),
+      autoLockLabel: S.autoLock + ' min', cycleLock: () => { const o = [1, 5, 15]; this.setState({ autoLock: o[(o.indexOf(S.autoLock) + 1) % o.length] }); },
+      revealPhrase: () => this.setState({ screen: 'pin', pinMode: 'reveal', pin: '', pinError: '' }),
+      privacyInfo: () => this.flash('Keine Analytics, kein Tracking, keine Crash-Reports'),
+      resetOpen: S.resetOpen, openReset: set({ resetOpen: true, resetChk: false }), closeReset: set({ resetOpen: false }),
+      toggleResetChk: set({ resetChk: !S.resetChk }), resetBox: S.resetChk ? NEG : '#2A2A32', resetCheck: S.resetChk ? checkEl : null,
+      resetOpacity: S.resetChk ? 1 : 0.4,
+      doReset: () => S.resetChk && this.setState({ resetOpen: false, screen: 'welcome', pinFirst: '', pinMode: 'set', checks: [false, false, false], seedShown: false, picks: {} }),
+      confirmOpen: S.confirmOpen, confirmLabel: S.faceId ? 'Face ID' : 'PIN bestätigt', runConfirm: () => this.runConfirm(),
+      showDock: ['home', 'markets', 'activity', 'settings'].includes(scr), navLeft: navDefs.slice(0, 2), navRight: navDefs.slice(2),
+      toast: S.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

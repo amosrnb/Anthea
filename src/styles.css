@@ -1,0 +1,95 @@
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-weight: 800;
+  -webkit-font-smoothing: antialiased;
+}
+*::-webkit-scrollbar { display: none; }
+input::placeholder, textarea::placeholder { color: #5E5E66; }
+
+@keyframes antheaFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes antheaRise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes antheaSpin { to { transform: rotate(360deg); } }
+
+/* 390×844 device surface */
+.device {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  margin: 0 auto;
+  flex: none;
+  overflow: hidden;
+  background: #000000;
+  color: #F7F7F5;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.cta { margin-top: auto; padding: 0 16px 34px; }
+
+.icon-btn {
+  border: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .05);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.icon-btn--hover:hover { background: rgba(255, 255, 255, .1); }
+
+.btn {
+  width: 100%;
+  height: 60px;
+  border: 0;
+  border-radius: 22px;
+  cursor: pointer;
+}
+.btn--primary { background: #6C5CE7; color: #FFFFFF; font: 900 16.5px 'Nunito', sans-serif; }
+.btn--secondary { background: #141418; color: #F7F7F5; font: 800 16px 'Nunito', sans-serif; }
+.btn--hover.btn--primary:hover { background: #7E70EB; }
+.btn--hover.btn--secondary:hover { background: #1E1E23; }
+
+.row-btn {
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-family: 'Nunito', sans-serif;
+}
+.row-btn--hover:hover { background: rgba(255, 255, 255, .03); }
+
+.action-btn { border: 0; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 9px; cursor: pointer; }
+.action-btn:hover { filter: brightness(1.12); }
+
+.key { background: var(--bg); }
+.key--pin:active { background: #2A2A32; }
+.key--amt:active { background: #1E1E23; }
+
+.dock-swap:hover { background: #7E70EB !important; }
+
+.settings-row {
+  width: 100%;
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 16px;
+  cursor: pointer;
+  color: #F7F7F5;
+  font: 800 15px 'Nunito', sans-serif;
+}
+.settings-row + .settings-row { border-top: 1px solid rgba(255, 255, 255, .06); }
+.settings-row > span { color: #9A9AA3; }
