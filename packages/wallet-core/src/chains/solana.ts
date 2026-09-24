@@ -9,13 +9,16 @@
  *
  * Key derivation and signing use only pure-JS audited primitives
  * (@noble/hashes, @noble/curves) so they run unchanged in browsers, Node and
- * React Native. @solana/web3.js is loaded lazily, and only for RPC calls
- * (balance, fees, send, status), so key handling never depends on Node's
- * `Buffer`.
+ * React Native. @solana/web3.js is used only for RPC calls (balance, fees,
+ * send, status); its browser and React Native builds bring their own
+ * `buffer` package. It is imported statically: a dynamic import() becomes a
+ * separate lazy bundle in Metro's dev server, which fails to resolve when
+ * web3.js lives outside the app's folder (as in this monorepo).
  */
 import { ed25519 } from "@noble/curves/ed25519";
 import { hmac } from "@noble/hashes/hmac";
 import { sha512 } from "@noble/hashes/sha2";
+import * as solanaWeb3 from "@solana/web3.js";
 import bs58 from "bs58";
 import { formatUnits, parseUnits } from "viem";
 import { mnemonicToSeed } from "../mnemonic.js";
@@ -86,7 +89,7 @@ export function deriveSolanaKeypair(mnemonic: string, accountIndex: number): Sol
 }
 
 async function loadWeb3() {
-  return import("@solana/web3.js");
+  return solanaWeb3;
 }
 
 function assertValidAddress(web3: Awaited<ReturnType<typeof loadWeb3>>, address: string) {

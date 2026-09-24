@@ -142,6 +142,6 @@ against a stubbed JSON-RPC endpoint, and checks the signed transactions
 (chain ID, recipient, amount, signature) and which endpoint each network hits.
 
 Key derivation and signing are pure JS (`@noble/*`, `@scure/*`) and need no
-Node built-ins. `@solana/web3.js` is loaded lazily, only for Solana RPC calls
+Node built-ins. `@solana/web3.js` is used only for Solana RPC calls
 (balance, fee, send, status, airdrop); in a browser it still expects a `Buffer`
 polyfill (e.g. `vite-plugin-node-polyfills`, as `packages/web` does).
