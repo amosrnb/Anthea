@@ -79,15 +79,34 @@ account.solana.address; // base58 address
 await account.ethereum.getNativeBalance(); // "0.42" (ETH)
 await account.solana.getNativeBalance(); // "1.5" (SOL)
 
-await account.ethereum.sendNative("0xRecipient...", "0.01");
+await account.ethereum.estimateNativeFee("0xRecipient...", "0.01"); // max fee, e.g. "0.000046"
+const hash = await account.ethereum.sendNative("0xRecipient...", "0.01");
+await account.ethereum.getTransactionStatus(hash); // "pending" | "confirmed" | "failed"
 await account.solana.sendNative("RecipientBase58...", "0.1");
 ```
 
-By default each chain adapter uses a public default RPC endpoint. Pass
-`{ rpcUrl }` to any `getNativeBalance`/`sendNative`/`signMessage` call to use
-a dedicated provider (Alchemy/Infura for Ethereum, a Solana RPC provider)
-instead — recommended for production traffic/rate limits. See the "Open
-Decisions" section of the ANT-2 scope doc for RPC provider selection.
+### Networks and RPC endpoints
+
+Every RPC method takes an optional `RpcConfig`:
+
+- `network: "mainnet" | "testnet"` (default `mainnet`). `testnet` is Ethereum
+  **Sepolia** and Solana **Devnet**: same keys and addresses, free test coins.
+- `rpcUrl`: a dedicated endpoint for that network (Alchemy/Infura for
+  Ethereum, Helius/QuickNode/… for Solana). Without it, a rate-limited public
+  endpoint is used, which is fine for testing but not for real traffic.
+
+```ts
+const testnet = { network: "testnet" } as const;
+await account.solana.getNativeBalance(testnet);
+await account.solana.requestTestnetAirdrop("1", testnet); // Devnet faucet, often rate-limited
+explorerTxUrl("solana", signature, "testnet"); // Solana Explorer link, ?cluster=devnet
+```
+
+`sendNative` resolves as soon as the network accepts the transaction (it
+has been signed locally and passed the node's checks); follow it with
+`getTransactionStatus`. On Solana, a first transfer to an empty address below
+the rent-exempt minimum (~0.00089 SOL) is refused up front, since the network
+would reject it.
 
 ### Locking
 
@@ -117,11 +136,12 @@ npm run test --workspace=@anthea/wallet-core
 npm run build --workspace=@anthea/wallet-core
 ```
 
-Tests use `vitest` with `fake-indexeddb` (no real browser or live RPC
-required — send/balance tests only cover input validation that fails
-closed before any network call, per chain adapter).
+Tests use `vitest` with `fake-indexeddb`. No real browser or live RPC is
+needed: `test/chains/rpc.test.ts` runs balance, fee, send and status calls
+against a stubbed JSON-RPC endpoint, and checks the signed transactions
+(chain ID, recipient, amount, signature) and which endpoint each network hits.
 
 Key derivation and signing are pure JS (`@noble/*`, `@scure/*`) and need no
 Node built-ins. `@solana/web3.js` is loaded lazily, only for Solana RPC calls
-(`getNativeBalance`/`sendNative`); in a browser it still expects a `Buffer`
+(balance, fee, send, status, airdrop); in a browser it still expects a `Buffer`
 polyfill (e.g. `vite-plugin-node-polyfills`, as `packages/web` does).
