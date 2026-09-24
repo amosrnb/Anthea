@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import { IND, INK, NEG } from './data';
 import { Icon } from './icons';
 import { Activity, CheckBoxMark, Reveal, Rpc, Settings, TxDetail } from './screens/Account';
-import { Import, PasswordField, Password, Pin, Seed, Verify, Warn, Welcome } from './screens/Onboarding';
+import { Import, Pin, Seed, Verify, Warn, Welcome } from './screens/Onboarding';
 import { CoinDetail, Home, Markets } from './screens/Portfolio';
 import { Status, Swap, SwapReview } from './screens/Swap';
 import { Receive, SendAmount, SendAsset, SendReview, SendTo } from './screens/Transfer';
@@ -10,7 +10,7 @@ import { useWallet, type Screen, type Wallet, type WalletProps } from './useWall
 import { f, MUTED, Sheet } from './ui';
 
 const SCREENS: Record<Screen, ComponentType<{ w: Wallet }>> = {
-  welcome: Welcome, warn: Warn, seed: Seed, verify: Verify, import: Import, pin: Pin, password: Password,
+  welcome: Welcome, warn: Warn, seed: Seed, verify: Verify, import: Import, pin: Pin,
   home: Home, markets: Markets, coin: CoinDetail, receive: Receive,
   sendAsset: SendAsset, sendTo: SendTo, sendAmt: SendAmount, sendReview: SendReview,
   swap: Swap, swapReview: SwapReview, status: Status,
@@ -71,17 +71,24 @@ function ResetSheet({ w }: { w: Wallet }) {
   );
 }
 
-/** Password prompt shown before a transaction is signed. */
+/** PIN prompt shown before a transaction is signed; checks automatically after the 6th digit. */
 function ConfirmSheet({ w }: { w: Wallet }) {
   return (
     <Sheet onClose={w.closeConfirm} scrim={0.6} z={35}>
-      <h3 style={{ margin: '16px 4px 4px', font: f(900, 21) }}>Passwort eingeben</h3>
-      <p style={{ margin: '0 4px', font: f(700, 13.5, 1.5), color: MUTED }}>Signatur auf diesem Gerät</p>
-      <form onSubmit={(ev) => { ev.preventDefault(); w.runConfirm(); }} style={{ marginTop: 16 }}>
-        <PasswordField value={w.pwEntry} onChange={w.onPwEntry} placeholder="Passwort" autoFocus />
-        <div role="alert" style={{ height: 18, margin: '8px 6px 0', font: f(800, 12.5), color: NEG }}>{w.pwError}</div>
-        <button type="submit" className="btn btn--primary" style={{ marginTop: 8, height: 54, borderRadius: 20, font: f(900, 15.5), opacity: w.pwEntry ? 1 : 0.4 }}>Bestätigen</button>
-      </form>
+      <h3 style={{ margin: '16px 4px 4px', font: f(900, 21), textAlign: 'center' }}>PIN eingeben</h3>
+      <p style={{ margin: 0, font: f(700, 13.5, 1.5), color: MUTED, textAlign: 'center' }}>Signatur auf diesem Gerät</p>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 20 }}>
+        {w.confirmDots.map((bg, i) => <span key={i} style={{ width: 14, height: 14, borderRadius: '50%', background: bg }} />)}
+      </div>
+      <div role="alert" style={{ height: 18, marginTop: 10, font: f(800, 13), color: NEG, textAlign: 'center' }}>{w.confirmError}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px 22px', padding: '6px 24px 0' }}>
+        {w.confirmKeys.map((k, i) => (
+          <button key={i} className="key key--pin" onClick={k.onClick} aria-label={k.label || (k.icon ? 'Löschen' : undefined)}
+            style={{ ['--bg' as string]: k.bg, height: 58, border: 0, borderRadius: '50%', color: INK, font: f(900, 24), cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+            {k.label}{k.icon}
+          </button>
+        ))}
+      </div>
     </Sheet>
   );
 }
