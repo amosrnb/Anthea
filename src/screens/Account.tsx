@@ -73,7 +73,6 @@ export function Settings({ w }: { w: Wallet }) {
       </Group>
       <Group label="SICHERHEIT">
         <Item label="PIN ändern" value="6 Ziffern" onClick={w.changePin} />
-        <Item label="Passwort ändern" value="Für Transaktionen" onClick={w.changePassword} />
         <Item label="Auto-Sperre" value={w.autoLockLabel} onClick={w.cycleLock} />
         <Item label="Jetzt sperren" value="›" onClick={w.lockNow} />
       </Group>

@@ -7,7 +7,7 @@ import { chart, famOf, nf, pc, qrCells, short, validateAddress } from './lib';
 import { Icon, StarIcon } from './icons';
 
 export type Screen =
-  | 'welcome' | 'warn' | 'seed' | 'verify' | 'import' | 'pin' | 'password'
+  | 'welcome' | 'warn' | 'seed' | 'verify' | 'import' | 'pin'
   | 'home' | 'markets' | 'coin' | 'receive'
   | 'sendAsset' | 'sendTo' | 'sendAmt' | 'sendReview'
   | 'swap' | 'swapReview' | 'status' | 'activity' | 'tx' | 'settings' | 'rpc' | 'reveal';
@@ -40,7 +40,7 @@ interface State {
   screen: Screen; pinMode: PinMode; flow: 'create' | 'import'; tab: Tab;
   checks: boolean[]; seedShown: boolean; picks: Record<number, string>; importText: string;
   pin: string; pinFirst: string; pinError: string; autoLock: number;
-  password: string; pwA: string; pwB: string; pwVisible: boolean; pwEntry: string; pwError: string; currency: Currency;
+  cPin: string; cPinError: string; currency: Currency;
   netFilter: string; hRange: HRange; mSearch: string; mTab: 'Top' | 'Watchlist'; watch: string[]; coin: string; cRange: CRange;
   rcvAsset: string; rcvNet: string;
   sAsset: string; sTo: string; sAmt: string; sFiat: boolean; sFee: number;
@@ -58,7 +58,7 @@ function initialState(start: WalletProps['startScreen']): State {
     screen: start === 'lock' ? 'pin' : start, pinMode: start === 'lock' ? 'unlock' : 'set', flow: 'create', tab: 'home',
     checks: [false, false, false], seedShown: false, picks: {}, importText: '',
     pin: '', pinFirst: '', pinError: '', autoLock: 5,
-    password: '', pwA: '', pwB: '', pwVisible: false, pwEntry: '', pwError: '', currency: 'EUR',
+    cPin: '', cPinError: '', currency: 'EUR',
     netFilter: 'Alle', hRange: '24H', mSearch: '', mTab: 'Top', watch: ['btc', 'sol'], coin: 'eth', cRange: '24H',
     rcvAsset: 'USDC', rcvNet: 'Base',
     sAsset: 'usdc-base', sTo: '', sAmt: '', sFiat: false, sFee: 1,
@@ -94,17 +94,24 @@ export function useWallet(P: WalletProps) {
 
   const flash = (m: string) => { setState({ toast: m }); later('toast', 2400, () => setState({ toast: null })); };
 
-  /** Signing requires the wallet password. Without one set (onboarding skipped via ?start=), any entry is accepted. */
-  const runConfirm = () => {
+  /** Signing requires the PIN. Without one set (onboarding skipped via ?start=), any 6 digits are accepted. */
+  const runConfirm = (p: string) => {
     const s = latest.current;
-    if (!s.confirmOpen || !s.pwEntry) return;
-    if (s.password && s.pwEntry !== s.password) return setState({ pwError: 'Falsches Passwort.', pwEntry: '' });
-    setState({ confirmOpen: false, pwEntry: '', pwError: '' });
+    if (!s.confirmOpen) return;
+    if (s.pinFirst && p !== s.pinFirst) return setState({ cPin: '', cPinError: 'Falsche PIN.' });
+    setState({ confirmOpen: false, cPin: '', cPinError: '' });
     confirmRun.current?.();
   };
   const openConfirm = (run: () => void) => {
     confirmRun.current = run;
-    setState({ confirmOpen: true, pwEntry: '', pwError: '' });
+    setState({ confirmOpen: true, cPin: '', cPinError: '' });
+  };
+  const confirmPress = (k: string) => {
+    if (k === 'del') return setState({ cPin: S.cPin.slice(0, -1), cPinError: '' });
+    if (!k || S.cPin.length >= 6) return;
+    const p = S.cPin + k;
+    setState({ cPin: p, cPinError: '' });
+    if (p.length === 6) later('cpin', 200, () => runConfirm(p));
   };
 
   const startStatus = (cfg: StatusCfg) => {
@@ -121,7 +128,10 @@ export function useWallet(P: WalletProps) {
     const s = latest.current;
     if (s.pinMode === 'set') return setState({ pinFirst: p, pin: '', pinMode: 'confirm' });
     if (s.pinMode === 'confirm') {
-      if (p === s.pinFirst) return setState({ screen: 'password', pin: '', pwA: '', pwB: '', pwVisible: false });
+      if (p === s.pinFirst) {
+        setState({ screen: 'home', tab: 'home', pin: '' });
+        return flash(s.flow === 'import' ? 'Konten abgeleitet · Bitcoin-Scan abgeschlossen' : 'Wallet bereit');
+      }
       return setState({ pinMode: 'set', pin: '', pinFirst: '', pinError: 'PINs stimmen nicht überein. Bitte neu festlegen.' });
     }
     if (s.pinFirst && p !== s.pinFirst) return setState({ pin: '', pinError: 'Falsche PIN. Noch 4 Versuche.' });
@@ -210,18 +220,14 @@ export function useWallet(P: WalletProps) {
     set: '6 Ziffern. Sie schützt dein Wallet auf diesem Gerät.', confirm: 'Gib die PIN noch einmal ein.',
     unlock: 'PIN eingeben.', reveal: 'Für die Phrase ist die PIN nötig.'
   };
-  const pwLongEnough = S.pwA.length >= 8;
-  const pwMatch = S.pwA === S.pwB;
-  const pwValid = pwLongEnough && pwMatch;
-  const pwMsg = !S.pwA ? 'Mindestens 8 Zeichen' : !pwLongEnough ? 'Noch ' + (8 - S.pwA.length) + ' Zeichen' : !S.pwB ? 'Passwort wiederholen' : pwMatch ? 'Passwort gültig' : 'Passwörter stimmen nicht überein';
-  const pwMsgInk = S.pwA && pwLongEnough && S.pwB ? (pwMatch ? POS : NEG) : MUT;
   const pinDots = [0, 1, 2, 3, 4, 5].map((i) => (i < S.pin.length ? IND : '#2A2A32'));
-  const pinKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((k) => ({
+  const keypad = (press: (k: string) => void) => ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((k) => ({
     label: k === 'del' ? '' : k,
     icon: (k === 'del' ? <Icon name="del" color={INK} size={24} weight={1.9} /> : null) as ReactNode,
     bg: k && k !== 'del' ? '#141418' : 'transparent',
-    onClick: () => pinPress(k)
+    onClick: () => press(k)
   }));
+  const pinKeys = keypad(pinPress);
 
   // Home
   const known = ASSETS.filter((a) => a.price != null);
@@ -316,7 +322,7 @@ export function useWallet(P: WalletProps) {
     { k: 'Gesamt', v: canFiat ? fiat(tokenFiat! + fee.eur) : nf(tokenAmt, sA.dec) + ' ' + sA.sym + ' + ' + fiat(fee.eur) },
     { k: 'Simulation', v: 'Erfolgreich', ink: POS }
   ]);
-  const confirmCta = 'Mit Passwort bestätigen';
+  const confirmCta = 'Mit PIN bestätigen';
 
   // Swap
   const F = A(S.swFrom), T = A(S.swTo);
@@ -402,15 +408,6 @@ export function useWallet(P: WalletProps) {
     importDemo: set({ importText: SEED.join(' ') }),
     importNext: () => importValid && setState({ screen: 'pin', pinMode: 'set', pin: '', pinFirst: '', pinError: '' }),
     pinTitle: pinTitles[S.pinMode], pinSub: pinSubs[S.pinMode], pinDots, pinKeys, pinError: S.pinError, pinCanBack: S.pinMode !== 'unlock',
-    pwA: S.pwA, pwB: S.pwB, pwVisible: S.pwVisible, pwMsg, pwMsgInk, pwValid,
-    onPwA: (ev: ChangeEvent<HTMLInputElement>) => setState({ pwA: ev.target.value }),
-    onPwB: (ev: ChangeEvent<HTMLInputElement>) => setState({ pwB: ev.target.value }),
-    togglePwVisible: set({ pwVisible: !S.pwVisible }),
-    savePassword: () => {
-      if (!pwValid) return;
-      setState({ password: S.pwA, pwA: '', pwB: '', pwVisible: false, screen: 'home', tab: 'home' });
-      flash(S.flow === 'import' ? 'Konten abgeleitet · Bitcoin-Scan abgeschlossen' : 'Wallet bereit');
-    },
 
     // home
     total: fiat(totalEur), totalDelta: pc(hPct), totalDeltaInk: hPct < 0 ? NEG : ACC,
@@ -489,7 +486,6 @@ export function useWallet(P: WalletProps) {
     addRpc: () => flash('Nur HTTPS-Endpunkte werden akzeptiert'),
     tokensInfo: () => flash('Token per Vertragsadresse hinzufügen'),
     changePin: () => flash('Alte PIN prüfen, dann neue festlegen'),
-    changePassword: () => flash('Altes Passwort prüfen, dann neues festlegen'),
     autoLockLabel: S.autoLock + ' min', cycleLock: () => { const o = [1, 5, 15]; setState({ autoLock: o[(o.indexOf(S.autoLock) + 1) % o.length] }); },
     revealPhrase: () => setState({ screen: 'pin', pinMode: 'reveal', pin: '', pinError: '' }),
     privacyInfo: () => flash('Keine Analytics, kein Tracking, keine Crash-Reports'),
@@ -498,9 +494,9 @@ export function useWallet(P: WalletProps) {
     doReset: () => S.resetChk && setState({ resetOpen: false, screen: 'welcome', pinFirst: '', pinMode: 'set', checks: [false, false, false], seedShown: false, picks: {} }),
 
     // overlays / chrome
-    confirmOpen: S.confirmOpen, runConfirm, pwEntry: S.pwEntry, pwError: S.pwError,
-    onPwEntry: (ev: ChangeEvent<HTMLInputElement>) => setState({ pwEntry: ev.target.value, pwError: '' }),
-    closeConfirm: set({ confirmOpen: false, pwEntry: '', pwError: '' }),
+    confirmOpen: S.confirmOpen, confirmDots: [0, 1, 2, 3, 4, 5].map((i) => (i < S.cPin.length ? IND : '#2A2A32')),
+    confirmKeys: keypad(confirmPress), confirmError: S.cPinError,
+    closeConfirm: () => { clearTimeout(timers.current.cpin); setState({ confirmOpen: false, cPin: '', cPinError: '' }); },
     showDock: (TABS as Screen[]).includes(scr), navLeft: nav.slice(0, 2), navRight: nav.slice(2)
   };
 }
