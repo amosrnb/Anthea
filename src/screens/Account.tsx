@@ -1,71 +1,100 @@
+import { Children, type ReactNode } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { NEG, POS } from '../data';
-import { Icon } from '../icons';
+import { BigBtn, Btn, Cta, f, Header, HeaderTitle, KvRows, MUTED, Overline, p, PrimaryCta, Screen, Scroll, TNUM, Txt, useBottomExtra } from '../ui';
 import type { Wallet } from '../useWallet';
-import { DIM, f, Header, HeaderTitle, KvRows, MUTED, Overline, PrimaryCta, TNUM } from '../ui';
+import { WordGrid } from './Onboarding';
 
-const PageTitle = ({ children, pad }: { children: string; pad: string }) => (
-  <div style={{ padding: pad, font: f(900, 28), letterSpacing: '-.7px' }}>{children}</div>
+const PageTitle = ({ children, pad }: { children: string; pad: [number, number, number] }) => (
+  <Txt accessibilityRole="header" style={[f(900, 28), { letterSpacing: -0.7 }, p(...pad)]}>
+    {children}
+  </Txt>
 );
 
 export function Activity({ w }: { w: Wallet }) {
   return (
-    <div className="scroll">
-      <PageTitle pad="22px 20px 4px">Aktivität</PageTitle>
-      <div style={{ margin: '0 16px 130px' }}>
+    <Scroll>
+      <PageTitle pad={[22, 20, 4]}>Aktivität</PageTitle>
+      <View style={{ marginHorizontal: 16, marginBottom: 130 }}>
         {w.activity.map((a) => (
-          <div key={a.id}>
-            {a.showHeader && <Overline style={{ padding: '18px 4px 6px' }}>{a.day}</Overline>}
-            <button className="row-btn row-btn--hover" onClick={a.onClick} style={{ gap: 13, padding: '12px 4px' }}>
-              <span style={{ flex: 'none', width: 42, height: 42, borderRadius: '50%', background: '#141418', display: 'grid', placeItems: 'center' }}>{a.icon}</span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', font: f(800, 15), color: '#F7F7F5' }}>{a.title}</span>
-                <span style={{ display: 'block', marginTop: 3, font: f(800, 12), color: MUTED, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.sub}</span>
-              </span>
-              <span style={{ textAlign: 'right' }}>
-                <span style={{ display: 'block', font: f(800, 14.5), color: a.amtInk, ...TNUM }}>{a.amt}</span>
-                <span style={{ display: 'inline-block', marginTop: 4, font: f(800, 10.5), color: a.stInk, background: a.stBg, borderRadius: 6, padding: '2px 6px' }}>{a.status}</span>
-              </span>
-            </button>
-          </div>
+          <View key={a.id}>
+            {a.showHeader && <Overline style={p(18, 4, 6)}>{a.day}</Overline>}
+            <Btn onPress={a.onClick} style={[styles.row, { gap: 13 }, p(12, 4)]} hoverStyle={styles.rowHover}>
+              <View style={[styles.center, { width: 42, height: 42, borderRadius: 21, backgroundColor: '#141418' }]}>{a.icon}</View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Txt style={f(800, 15)}>{a.title}</Txt>
+                <Txt numberOfLines={1} style={[f(800, 12), { marginTop: 3, color: MUTED }]}>
+                  {a.sub}
+                </Txt>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Txt style={[f(800, 14.5), { color: a.amtInk }, TNUM]}>{a.amt}</Txt>
+                <View style={[{ marginTop: 4, backgroundColor: a.stBg, borderRadius: 6 }, p(2, 6)]}>
+                  <Txt style={[f(800, 10.5), { color: a.stInk }]}>{a.status}</Txt>
+                </View>
+              </View>
+            </Btn>
+          </View>
         ))}
-      </div>
-    </div>
+      </View>
+    </Scroll>
   );
 }
 
 export function TxDetail({ w }: { w: Wallet }) {
   const tx = w.tx;
   return (
-    <div className="screen">
-      <Header onBack={w.back}><HeaderTitle>Transaktion</HeaderTitle></Header>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '26px 20px 10px' }}>
-        <span style={{ width: 64, height: 64, borderRadius: '50%', background: '#141418', display: 'grid', placeItems: 'center' }}>{tx.icon}</span>
-        <div style={{ marginTop: 16, font: f(900, 30), letterSpacing: '.3px', color: tx.amtInk, ...TNUM }}>{tx.amt}</div>
-        <div style={{ marginTop: 6, font: f(800, 13.5), color: MUTED }}>{tx.title}</div>
-      </div>
-      <div style={{ margin: '10px 16px 0' }}><KvRows rows={w.txRows} pad="12px 4px" numeric={false} /></div>
-      <div className="cta">
-        <button className="btn btn--secondary" onClick={w.openExplorer} style={{ height: 58, font: f(800, 15.5) }}>Im Explorer ansehen</button>
-      </div>
-    </div>
+    <Screen>
+      <Header onBack={w.back}>
+        <HeaderTitle>Transaktion</HeaderTitle>
+      </Header>
+      <View style={[{ alignItems: 'center' }, p(26, 20, 10)]}>
+        <View style={[styles.center, { width: 64, height: 64, borderRadius: 32, backgroundColor: '#141418' }]}>{tx.icon}</View>
+        <Txt style={[f(900, 30), { marginTop: 16, letterSpacing: 0.3, color: tx.amtInk }, TNUM]}>{tx.amt}</Txt>
+        <Txt style={[f(800, 13.5), { marginTop: 6, color: MUTED }]}>{tx.title}</Txt>
+      </View>
+      <View style={{ marginTop: 10, marginHorizontal: 16 }}>
+        <KvRows rows={w.txRows} pad={[12, 4]} numeric={false} />
+      </View>
+      <Cta>
+        <BigBtn variant="secondary" onPress={w.openExplorer} style={{ height: 58 }} textStyle={f(800, 15.5)}>
+          Im Explorer ansehen
+        </BigBtn>
+      </Cta>
+    </Screen>
   );
 }
 
-const Group = ({ label, first, children }: { label: string; first?: boolean; children: React.ReactNode }) => (
+const Group = ({ label, first, children }: { label: string; first?: boolean; children: ReactNode }) => (
   <>
-    <Overline style={{ padding: first ? '14px 20px 6px' : '20px 20px 6px' }}>{label}</Overline>
-    <div style={{ margin: '0 16px', borderRadius: 22, background: '#0E0E11', overflow: 'hidden' }}>{children}</div>
+    <Overline style={first ? p(14, 20, 6) : p(20, 20, 6)}>{label}</Overline>
+    <View style={styles.group}>
+      {Children.toArray(children).map((child, i) => (
+        <View key={i} style={i > 0 ? styles.groupDivider : null}>
+          {child}
+        </View>
+      ))}
+    </View>
   </>
 );
 
-const Item = ({ label, value, onClick }: { label: string; value: React.ReactNode; onClick: () => void }) => (
-  <button className="settings-row" onClick={onClick}>{label}<span>{value}</span></button>
+const ItemBody = ({ label, value }: { label: string; value: string }) => (
+  <>
+    <Txt style={f(800, 15)}>{label}</Txt>
+    <Txt style={[f(800, 15), { color: MUTED }]}>{value}</Txt>
+  </>
+);
+
+const Item = ({ label, value, onClick }: { label: string; value: string; onClick: () => void }) => (
+  <Btn onPress={onClick} style={styles.settingsRow}>
+    <ItemBody label={label} value={value} />
+  </Btn>
 );
 
 export function Settings({ w }: { w: Wallet }) {
   return (
-    <div className="scroll" style={{ paddingBottom: 120 }}>
-      <PageTitle pad="22px 20px 8px">Einstellungen</PageTitle>
+    <Scroll contentStyle={{ paddingBottom: 120 }}>
+      <PageTitle pad={[22, 20, 8]}>Einstellungen</PageTitle>
       <Group label="ALLGEMEIN" first>
         <Item label="Währung" value={w.currency} onClick={w.cycleCur} />
         <Item label="Netzwerke & RPC" value="8 aktiv" onClick={w.goRpc} />
@@ -81,58 +110,75 @@ export function Settings({ w }: { w: Wallet }) {
       </Group>
       <Group label="ÜBER">
         <Item label="Datenschutz" value="Kein Tracking" onClick={w.privacyInfo} />
-        <div className="settings-row" style={{ width: 'auto', cursor: 'default' }}>Version<span>0.1 (MVP)</span></div>
+        <View style={styles.settingsRow}>
+          <ItemBody label="Version" value="0.1 (MVP)" />
+        </View>
       </Group>
-      <div style={{ padding: '22px 16px 0' }}>
-        <button onClick={w.openReset} style={{ width: '100%', height: 54, border: 0, borderRadius: 20, background: 'rgba(255,143,128,.1)', color: NEG, font: f(900, 15), cursor: 'pointer' }}>Wallet zurücksetzen</button>
-      </div>
-    </div>
+      <View style={p(22, 16, 0)}>
+        <Btn onPress={w.openReset} style={[styles.center, { height: 54, borderRadius: 20, backgroundColor: 'rgba(255,143,128,.1)' }]}>
+          <Txt style={[f(900, 15), { color: NEG }]}>Wallet zurücksetzen</Txt>
+        </Btn>
+      </View>
+    </Scroll>
   );
 }
 
 export function Rpc({ w }: { w: Wallet }) {
+  const extra = useBottomExtra();
   return (
-    <div className="screen">
-      <Header onBack={w.back}><HeaderTitle>Netzwerke &amp; RPC</HeaderTitle></Header>
-      <p style={{ margin: '16px 20px 6px', font: f(700, 13, 1.55), color: MUTED }}>Anbieter sehen deine IP-Adresse und abgefragte Adressen. Eigene Endpunkte verbessern die Privatsphäre. Nur HTTPS.</p>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', margin: '6px 16px 0' }}>
+    <Screen>
+      <Header onBack={w.back}>
+        <HeaderTitle>Netzwerke &amp; RPC</HeaderTitle>
+      </Header>
+      <Txt style={[f(700, 13, 1.55), { color: MUTED, marginTop: 16, marginHorizontal: 20, marginBottom: 6 }]}>
+        Anbieter sehen deine IP-Adresse und abgefragte Adressen. Eigene Endpunkte verbessern die Privatsphäre. Nur HTTPS.
+      </Txt>
+      <ScrollView style={{ flex: 1, marginTop: 6, marginHorizontal: 16 }} showsVerticalScrollIndicator={false}>
         {w.rpcs.map((r) => (
-          <div key={r.net} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 4px', borderTop: `1px solid ${r.divider}` }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: POS }} />
-            <span style={{ flex: 1 }}>
-              <span style={{ display: 'block', font: f(800, 15) }}>{r.net}</span>
-              <span style={{ display: 'block', marginTop: 3, font: f(800, 12), color: MUTED }}>{r.url}</span>
-            </span>
-            <span style={{ font: f(800, 11.5), color: MUTED }}>{r.fb}</span>
-          </div>
+          <View key={r.net} style={[styles.row, { gap: 12, borderTopWidth: 1, borderTopColor: r.divider }, p(12, 4)]}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: POS }} />
+            <View style={{ flex: 1 }}>
+              <Txt style={f(800, 15)}>{r.net}</Txt>
+              <Txt style={[f(800, 12), { marginTop: 3, color: MUTED }]}>{r.url}</Txt>
+            </View>
+            <Txt style={[f(800, 11.5), { color: MUTED }]}>{r.fb}</Txt>
+          </View>
         ))}
-      </div>
-      <div style={{ padding: '12px 16px 34px' }}>
-        <button className="btn btn--secondary" onClick={w.addRpc} style={{ height: 56, font: f(800, 15.5) }}>Eigenen Endpunkt hinzufügen</button>
-      </div>
-    </div>
+      </ScrollView>
+      <View style={p(12, 16, 34 + extra)}>
+        <BigBtn variant="secondary" onPress={w.addRpc} style={{ height: 56 }} textStyle={f(800, 15.5)}>
+          Eigenen Endpunkt hinzufügen
+        </BigBtn>
+      </View>
+    </Screen>
   );
 }
 
 export function Reveal({ w }: { w: Wallet }) {
   return (
-    <div className="screen">
-      <Header onBack={w.back}><HeaderTitle>Wiederherstellungsphrase</HeaderTitle></Header>
-      <div style={{ margin: '16px 16px 0', borderRadius: 18, background: 'rgba(255,143,128,.1)', padding: '14px 16px', font: f(800, 13.5, 1.45), color: '#FFB9AE' }}>
-        Wer die Wörter kennt, besitzt das Geld. Zeige sie niemandem, auch nicht dem Support.
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '14px 16px 0' }}>
-        {w.seedWords.map((s) => (
-          <span key={s.n} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 12px', borderRadius: 14, background: '#141418' }}>
-            <span style={{ width: 18, font: f(800, 12), color: DIM }}>{s.n}</span>
-            <span style={{ font: f(900, 15.5), userSelect: 'none' }}>{s.w}</span>
-          </span>
-        ))}
-      </div>
-      <div style={{ padding: '12px 20px 0', font: f(800, 12), color: '#A79BFF' }}>Screenshots blockiert · Kopieren deaktiviert</div>
-      <div className="cta"><PrimaryCta onClick={w.back}>Fertig</PrimaryCta></div>
-    </div>
+    <Screen>
+      <Header onBack={w.back}>
+        <HeaderTitle>Wiederherstellungsphrase</HeaderTitle>
+      </Header>
+      <View style={[{ marginTop: 16, marginHorizontal: 16, borderRadius: 18, backgroundColor: 'rgba(255,143,128,.1)' }, p(14, 16)]}>
+        <Txt style={[f(800, 13.5, 1.45), { color: '#FFB9AE' }]}>Wer die Wörter kennt, besitzt das Geld. Zeige sie niemandem, auch nicht dem Support.</Txt>
+      </View>
+      <View style={{ marginTop: 14, marginHorizontal: 16 }}>
+        <WordGrid words={w.seedWords} cell={11} cellBg="#141418" />
+      </View>
+      <Txt style={[f(800, 12), { color: '#A79BFF' }, p(12, 20, 0)]}>Screenshots blockiert · Kopieren deaktiviert</Txt>
+      <Cta>
+        <PrimaryCta onClick={w.back}>Fertig</PrimaryCta>
+      </Cta>
+    </Screen>
   );
 }
 
-export const CheckBoxMark = () => <Icon name="check" color="#FFFFFF" size={14} weight={3} />;
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center' },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  rowHover: { backgroundColor: 'rgba(255,255,255,.03)' },
+  group: { marginHorizontal: 16, borderRadius: 22, backgroundColor: '#0E0E11', overflow: 'hidden' },
+  groupDivider: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,.06)' },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', ...p(15, 16) },
+});

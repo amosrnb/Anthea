@@ -1,0 +1,6 @@
+# Maestro workspace (https://docs.maestro.dev). Run against a development build on a simulator/emulator:
+#   npm run e2e
+flows:
+  - '*.yaml'
+excludeTags:
+  - wip

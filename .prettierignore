@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+prototype
+project
+chats
+android
+ios
+assets
+docs
+*.md
+package-lock.json
+server/node_modules
+server/.wrangler

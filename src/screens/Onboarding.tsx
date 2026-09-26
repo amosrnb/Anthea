@@ -1,172 +1,308 @@
+import { useEffect, useState } from 'react';
+import { Animated, Easing, StyleSheet, TextInput, View } from 'react-native';
 import { ACC, IND } from '../data';
-import { Icon, LockIcon } from '../icons';
+import { BackButton, BigBtn, Blurred, Btn, Cta, DIM, f, Grid, Header, MUTED, nativeDriver, Overline, p, PrimaryCta, Screen, TEXTAREA, TNUM, Txt } from '../ui';
+import { Icon, LockIcon } from '../ui/icons';
 import type { Wallet } from '../useWallet';
-import { BackButton, DIM, f, Header, MUTED, Overline, PrimaryCta, TNUM } from '../ui';
 
 const StepHeader = ({ w, label }: { w: Wallet; label: string }) => (
-  <Header onBack={w.back} padding="16px 18px 10px">
-    <span style={{ font: f(800, 13), color: MUTED }}>{label}</span>
+  <Header onBack={w.back} style={p(16, 18, 10)}>
+    <Txt style={[f(800, 13), { color: MUTED }]}>{label}</Txt>
   </Header>
 );
 
 const Intro = ({ title, lead }: { title: string; lead: string }) => (
-  <div style={{ padding: '14px 22px 0' }}>
-    <h2 style={{ margin: 0, font: f(900, 30, 1.1), letterSpacing: '-.8px' }}>{title}</h2>
-    <p style={{ margin: '12px 0 0', font: f(700, 14.5, 1.55), color: MUTED }}>{lead}</p>
-  </div>
+  <View style={p(14, 22, 0)}>
+    <Txt accessibilityRole="header" style={[f(900, 30, 1.1), { letterSpacing: -0.8 }]}>
+      {title}
+    </Txt>
+    <Txt style={[f(700, 14.5, 1.55), { marginTop: 12, color: MUTED }]}>{lead}</Txt>
+  </View>
 );
 
 const CheckMark = () => <Icon name="check" color="#FFFFFF" size={14} weight={3} />;
 
 /** Abstract blob illustration: rounded squares, two of them floating. */
 const BLOBS = [
-  { l: 58, t: 78, s: 120, r: 38, bg: IND, anim: 'antheaFloat 5s ease-in-out infinite' },
-  { l: 148, t: 52, s: 92, r: 30, bg: '#1A1A1F', anim: 'antheaFloat 6s ease-in-out infinite' },
+  { l: 58, t: 78, s: 120, r: 38, bg: IND, float: 5000 },
+  { l: 148, t: 52, s: 92, r: 30, bg: '#1A1A1F', float: 6000 },
   { l: 206, t: 146, s: 72, r: 24, bg: '#22222A' },
   { l: 252, t: 72, s: 40, r: 14, bg: IND },
   { l: 78, t: 214, s: 52, r: 18, bg: '#1A1A1F' },
-  { l: 286, t: 200, s: 26, r: 9, bg: 'rgba(108,92,231,.5)' }
+  { l: 286, t: 200, s: 26, r: 9, bg: 'rgba(108,92,231,.5)' },
 ];
+
+/** CSS `antheaFloat`: 0 → −8 → 0 pt, ease-in-out, infinite. */
+function Blob({ b }: { b: (typeof BLOBS)[number] }) {
+  const [y] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (!b.float) return;
+    const half = { duration: b.float / 2, easing: Easing.inOut(Easing.ease), useNativeDriver: nativeDriver };
+    const loop = Animated.loop(Animated.sequence([Animated.timing(y, { toValue: -8, ...half }), Animated.timing(y, { toValue: 0, ...half })]));
+    loop.start();
+    return () => loop.stop();
+  }, [b.float, y]);
+  return (
+    <Animated.View
+      style={{ position: 'absolute', left: b.l, top: b.t, width: b.s, height: b.s, borderRadius: b.r, backgroundColor: b.bg, transform: [{ translateY: y }] }}
+    />
+  );
+}
 
 export function Welcome({ w }: { w: Wallet }) {
   return (
-    <div className="screen">
-      <div style={{ position: 'relative', height: 290, marginTop: 16, flex: 'none' }}>
+    <Screen>
+      <View style={{ height: 290, marginTop: 16 }}>
         {BLOBS.map((b, i) => (
-          <span key={i} style={{ position: 'absolute', left: b.l, top: b.t, width: b.s, height: b.s, borderRadius: b.r, background: b.bg, animation: b.anim }} />
+          <Blob key={i} b={b} />
         ))}
-      </div>
-      <div style={{ padding: '8px 26px 0' }}>
-        <h1 style={{ margin: 0, font: f(900, 38, 1.08), letterSpacing: '-1.2px', textWrap: 'pretty' }}>Deine Schlüssel. Dein Gerät.</h1>
-        <p style={{ margin: '14px 0 0', font: f(700, 15, 1.55), color: MUTED, maxWidth: 310 }}>Ethereum, Solana und Bitcoin in einer App. Kein Konto, keine E-Mail, kein KYC.</p>
-      </div>
-      <div className="cta" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button className="btn btn--primary btn--hover" onClick={w.startCreate}>Neues Wallet erstellen</button>
-        <button className="btn btn--secondary btn--hover" onClick={w.startImport}>Bestehendes Wallet importieren</button>
-      </div>
-    </div>
+      </View>
+      <View style={p(8, 26, 0)}>
+        <Txt accessibilityRole="header" style={[f(900, 38, 1.08), { letterSpacing: -1.2 }]}>
+          Deine Schlüssel. Dein Gerät.
+        </Txt>
+        <Txt style={[f(700, 15, 1.55), { marginTop: 14, color: MUTED, maxWidth: 310 }]}>
+          Ethereum, Solana und Bitcoin in einer App. Kein Konto, keine E-Mail, kein KYC.
+        </Txt>
+      </View>
+      <Cta style={{ gap: 10 }}>
+        <BigBtn variant="primary" hover onPress={w.startCreate}>
+          Neues Wallet erstellen
+        </BigBtn>
+        <BigBtn variant="secondary" hover onPress={w.startImport}>
+          Bestehendes Wallet importieren
+        </BigBtn>
+      </Cta>
+    </Screen>
   );
 }
 
 export function Warn({ w }: { w: Wallet }) {
   return (
-    <div className="screen">
+    <Screen>
       <StepHeader w={w} label="Schritt 1 von 4" />
       <Intro title="Bevor es losgeht" lead="Anthea erzeugt gleich 12 Wörter. Sie sind der einzige Zugang zu deinem Geld." />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '22px 16px 0' }}>
+      <View style={[{ gap: 8 }, p(22, 16, 0)]}>
         {w.warnRows.map((r) => (
-          <button key={r.text} onClick={r.onClick} role="checkbox" aria-checked={r.on}
-            style={{ border: 0, width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, background: '#141418', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-            <span style={{ flex: 'none', width: 26, height: 26, borderRadius: 9, background: r.on ? IND : '#2A2A32', display: 'grid', placeItems: 'center' }}>{r.on && <CheckMark />}</span>
-            <span style={{ font: f(800, 15, 1.4), color: '#F7F7F5' }}>{r.text}</span>
-          </button>
+          <Btn key={r.text} onPress={r.onClick} role="checkbox" checked={r.on} style={styles.warnRow}>
+            <View style={[styles.checkBox, { backgroundColor: r.on ? IND : '#2A2A32' }]}>{r.on && <CheckMark />}</View>
+            <Txt style={[f(800, 15, 1.4), { flexShrink: 1 }]}>{r.text}</Txt>
+          </Btn>
         ))}
-      </div>
-      <div className="cta"><PrimaryCta onClick={w.warnNext} enabled={w.warnOk}>Wörter anzeigen</PrimaryCta></div>
-    </div>
+      </View>
+      <Cta>
+        <PrimaryCta onClick={w.warnNext} enabled={w.warnOk}>
+          Wörter anzeigen
+        </PrimaryCta>
+      </Cta>
+    </Screen>
   );
 }
 
 const Badge = ({ children }: { children: string }) => (
-  <span style={{ font: f(800, 11), color: ACC, background: 'rgba(108,92,231,.14)', borderRadius: 8, padding: '5px 9px' }}>{children}</span>
+  <View style={[{ backgroundColor: 'rgba(108,92,231,.14)', borderRadius: 8 }, p(5, 9)]}>
+    <Txt style={[f(800, 11), { color: ACC }]}>{children}</Txt>
+  </View>
 );
 
+export function WordGrid({ words, cell, cellBg }: { words: Wallet['seedWords']; cell: number; cellBg: string }) {
+  return (
+    <Grid cols={2} colGap={8} rowGap={8}>
+      {words.map((s) => (
+        <View key={s.n} style={[styles.word, p(cell, 12), { backgroundColor: cellBg }]}>
+          <Txt style={[f(800, 12), { width: 18, color: DIM }, TNUM]}>{s.n}</Txt>
+          <Txt selectable={false} style={f(900, 15.5)}>
+            {s.w}
+          </Txt>
+        </View>
+      ))}
+    </Grid>
+  );
+}
 export function Seed({ w }: { w: Wallet }) {
   return (
-    <div className="screen">
+    <Screen>
       <StepHeader w={w} label="Schritt 2 von 4" />
       <Intro title="Deine Wiederherstellungsphrase" lead="Schreibe die Wörter in dieser Reihenfolge auf Papier. Nicht fotografieren, nicht in die Cloud." />
-      <div style={{ display: 'flex', gap: 6, padding: '16px 22px 0' }}>
+      <View style={[{ flexDirection: 'row', gap: 6 }, p(16, 22, 0)]}>
         <Badge>Screenshots blockiert</Badge>
         <Badge>Kopieren deaktiviert</Badge>
-      </div>
-      <button onClick={w.revealSeed} style={{ position: 'relative', margin: '14px 16px 0', border: 0, padding: 16, borderRadius: 24, background: '#141418', cursor: 'pointer', textAlign: 'left' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, filter: w.seedShown ? 'none' : 'blur(9px)' }}>
-          {w.seedWords.map((s) => (
-            <span key={s.n} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 14, background: '#1E1E23' }}>
-              <span style={{ width: 18, font: f(800, 12), color: DIM, ...TNUM }}>{s.n}</span>
-              <span style={{ font: f(900, 15.5), color: '#F7F7F5', userSelect: 'none' }}>{s.w}</span>
-            </span>
-          ))}
-        </div>
+      </View>
+      <Btn onPress={w.revealSeed} label={w.seedShown ? undefined : 'Zum Anzeigen tippen'} style={styles.seedBox}>
+        <Blurred on={!w.seedShown} radius={9}>
+          <WordGrid words={w.seedWords} cell={10} cellBg="#1E1E23" />
+        </Blurred>
         {!w.seedShown && (
-          <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', font: f(900, 15), color: '#F7F7F5' }}>Zum Anzeigen tippen</span>
+          <View style={[StyleSheet.absoluteFill, styles.center]}>
+            <Txt style={f(900, 15)}>Zum Anzeigen tippen</Txt>
+          </View>
         )}
-      </button>
-      <div className="cta"><PrimaryCta onClick={w.seedNext} enabled={w.seedShown}>Ich habe sie notiert</PrimaryCta></div>
-    </div>
+      </Btn>
+      <Cta>
+        <PrimaryCta onClick={w.seedNext} enabled={w.seedShown}>
+          Ich habe sie notiert
+        </PrimaryCta>
+      </Cta>
+    </Screen>
   );
 }
 
 export function Verify({ w }: { w: Wallet }) {
   return (
-    <div className="screen">
+    <Screen>
       <StepHeader w={w} label="Schritt 3 von 4" />
       <Intro title="Kurz prüfen" lead="Wähle das richtige Wort für jede Position." />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: '24px 22px 0' }}>
+      <View style={[{ gap: 18 }, p(24, 22, 0)]}>
         {w.verifyRows.map((v) => (
-          <div key={v.pos}>
-            <Overline style={{ font: f(800, 12) }}>WORT #{v.pos}</Overline>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 10 }}>
+          <View key={v.pos}>
+            <Overline style={f(800, 12)}>WORT #{v.pos}</Overline>
+            <Grid cols={3} colGap={8} style={{ marginTop: 10 }}>
               {v.opts.map((o) => (
-                <button key={o.w} onClick={o.onClick} style={{ border: 0, height: 48, borderRadius: 16, background: o.bg, color: o.ink, font: f(900, 15), cursor: 'pointer' }}>{o.w}</button>
+                <Btn key={o.w} onPress={o.onClick} style={[styles.option, { backgroundColor: o.bg }]}>
+                  <Txt style={[f(900, 15), { color: o.ink }]}>{o.w}</Txt>
+                </Btn>
               ))}
-            </div>
-          </div>
+            </Grid>
+          </View>
         ))}
-      </div>
-      <div className="cta"><PrimaryCta onClick={w.verifyNext} enabled={w.verifyOk}>Weiter</PrimaryCta></div>
-    </div>
+      </View>
+      <Cta>
+        <PrimaryCta onClick={w.verifyNext} enabled={w.verifyOk}>
+          Weiter
+        </PrimaryCta>
+      </Cta>
+    </Screen>
   );
 }
+
+/** Props that keep seed words out of autocorrect, keyboard learning, autofill and the edit menu (BUILD_PLAN 5.4). */
+export const SEED_INPUT_PROPS = {
+  autoCorrect: false,
+  autoComplete: 'off',
+  autoCapitalize: 'none',
+  spellCheck: false,
+  contextMenuHidden: true,
+  importantForAutofill: 'no',
+} as const;
 
 export function Import({ w }: { w: Wallet }) {
   return (
-    <div className="screen">
+    <Screen>
       <StepHeader w={w} label="Import" />
       <Intro title="Phrase eingeben" lead="12 oder 24 Wörter, durch Leerzeichen getrennt." />
-      <div style={{ margin: '18px 16px 0', borderRadius: 24, background: '#141418', padding: 16 }}>
-        <textarea value={w.importText} onChange={w.onImport} placeholder="wort1 wort2 wort3 …"
-          autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
-          style={{ width: '100%', boxSizing: 'border-box', height: 120, resize: 'none', border: 0, outline: 0, background: 'transparent', color: '#F7F7F5', font: f(800, 16, 1.6) }} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6 }}>
-          <span style={{ font: f(800, 12.5), color: w.importInk }}>{w.importMsg}</span>
-          <button onClick={w.importDemo} style={{ border: 0, background: 'none', padding: 0, cursor: 'pointer', font: f(800, 12.5), color: ACC }}>Testphrase</button>
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '12px 16px 0' }}>
+      <View style={[{ marginTop: 18, marginHorizontal: 16, borderRadius: 24, backgroundColor: '#141418' }, p(16)]}>
+        <TextInput
+          value={w.importText}
+          onChangeText={w.onImport}
+          placeholder="wort1 wort2 wort3 …"
+          placeholderTextColor={DIM}
+          multiline
+          accessibilityLabel="Wiederherstellungsphrase"
+          {...SEED_INPUT_PROPS}
+          style={[styles.input, f(800, 16, 1.6), { height: 120 }]}
+        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6 }}>
+          <Txt style={[f(800, 12.5), { color: w.importInk, flexShrink: 1 }]}>{w.importMsg}</Txt>
+          <Btn onPress={w.importDemo}>
+            <Txt style={[f(800, 12.5), { color: ACC }]}>Testphrase</Txt>
+          </Btn>
+        </View>
+      </View>
+      <View style={[{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }, p(12, 16, 0)]}>
         {w.importSugg.map((s) => (
-          <button key={s.w} onClick={s.onClick} style={{ border: 0, borderRadius: 12, padding: '8px 13px', background: '#1E1E23', color: '#F7F7F5', font: f(800, 13.5), cursor: 'pointer' }}>{s.w}</button>
+          <Btn key={s.w} onPress={s.onClick} style={[{ borderRadius: 12, backgroundColor: '#1E1E23' }, p(8, 13)]}>
+            <Txt style={f(800, 13.5)}>{s.w}</Txt>
+          </Btn>
         ))}
-      </div>
-      <p style={{ margin: '14px 22px 0', font: f(700, 12, 1.5), color: DIM }}>Autokorrektur und Tastaturvorschläge sind deaktiviert. Vorschläge stammen nur aus der BIP39-Wortliste.</p>
-      <div className="cta"><PrimaryCta onClick={w.importNext} enabled={w.importValid}>Importieren</PrimaryCta></div>
-    </div>
+      </View>
+      <Txt style={[f(700, 12, 1.5), { marginTop: 14, marginHorizontal: 22, color: DIM }]}>
+        Autokorrektur und Tastaturvorschläge sind deaktiviert. Vorschläge stammen nur aus der BIP39-Wortliste.
+      </Txt>
+      <Cta>
+        <PrimaryCta onClick={w.importNext} enabled={w.importValid}>
+          Importieren
+        </PrimaryCta>
+      </Cta>
+    </Screen>
   );
 }
 
-export function Pin({ w }: { w: Wallet }) {
+/** 3×4 PIN keypad; shared by the PIN screen and the signing sheet. */
+export function PinPad({
+  keys,
+  keyHeight,
+  fontSize,
+  rowGap,
+  style,
+  testIDPrefix,
+}: {
+  keys: Wallet['pinKeys'];
+  /** Test IDs `<prefix>-0`…`<prefix>-9` for the digit keys (E2E tests). */
+  testIDPrefix: string;
+  keyHeight: number;
+  fontSize: number;
+  rowGap: number;
+  style?: object;
+}) {
   return (
-    <div className="screen">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px 10px', height: 40 }}>
-        {w.pinCanBack && <BackButton onClick={w.back} />}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '26px 30px 0', textAlign: 'center' }}>
-        <span style={{ width: 56, height: 56, borderRadius: 19, background: IND, display: 'grid', placeItems: 'center' }}><LockIcon size={24} color="#FFFFFF" weight={2.4} /></span>
-        <h2 style={{ margin: '20px 0 0', font: f(900, 26), letterSpacing: '-.6px' }}>{w.pinTitle}</h2>
-        <p style={{ margin: '8px 0 0', font: f(700, 14, 1.5), color: MUTED, maxWidth: 290 }}>{w.pinSub}</p>
-        <div style={{ display: 'flex', gap: 14, marginTop: 28 }}>
-          {w.pinDots.map((bg, i) => <span key={i} style={{ width: 14, height: 14, borderRadius: '50%', background: bg }} />)}
-        </div>
-        <div role="alert" style={{ height: 22, marginTop: 14, font: f(800, 13), color: '#FF8F80' }}>{w.pinError}</div>
-      </div>
-      <div style={{ marginTop: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px 22px', padding: '0 44px 40px' }}>
-        {w.pinKeys.map((k, i) => (
-          <button key={i} className="key key--pin" onClick={k.onClick} style={{ ['--bg' as string]: k.bg, height: 66, border: 0, borderRadius: '50%', color: '#F7F7F5', font: f(900, 26), cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
-            {k.label}{k.icon}
-          </button>
-        ))}
-      </div>
-    </div>
+    <Grid cols={3} colGap={22} rowGap={rowGap} style={style}>
+      {keys.map((k, i) => (
+        <Btn
+          key={i}
+          onPress={k.onClick}
+          label={k.label || (k.icon ? 'Löschen' : undefined)}
+          testID={k.label ? `${testIDPrefix}-${k.label}` : undefined}
+          style={[styles.pinKey, { height: keyHeight, backgroundColor: k.bg }]}
+          activeStyle={{ backgroundColor: '#2A2A32' }}
+        >
+          {k.label ? <Txt style={[f(900, fontSize), TNUM]}>{k.label}</Txt> : k.icon}
+        </Btn>
+      ))}
+    </Grid>
   );
 }
+
+export const PinDots = ({ dots }: { dots: string[] }) => (
+  <View style={{ flexDirection: 'row', gap: 14 }}>
+    {dots.map((bg, i) => (
+      <View key={i} style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: bg }} />
+    ))}
+  </View>
+);
+
+export function Pin({ w }: { w: Wallet }) {
+  return (
+    <Screen>
+      <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 66 }, p(16, 18, 10)]}>
+        {w.pinCanBack && <BackButton onClick={w.back} />}
+      </View>
+      <View style={[{ alignItems: 'center' }, p(26, 30, 0)]}>
+        <View style={[styles.center, { width: 56, height: 56, borderRadius: 19, backgroundColor: IND }]}>
+          <LockIcon size={24} color="#FFFFFF" weight={2.4} />
+        </View>
+        <Txt accessibilityRole="header" style={[f(900, 26), { marginTop: 20, letterSpacing: -0.6, textAlign: 'center' }]}>
+          {w.pinTitle}
+        </Txt>
+        <Txt style={[f(700, 14, 1.5), { marginTop: 8, color: MUTED, maxWidth: 290, textAlign: 'center' }]}>{w.pinSub}</Txt>
+        <View style={{ marginTop: 28 }}>
+          <PinDots dots={w.pinDots} />
+        </View>
+        <Txt accessibilityRole="alert" style={[f(800, 13), { height: 22, marginTop: 14, color: '#FF8F80', textAlign: 'center' }]}>
+          {w.pinError}
+        </Txt>
+      </View>
+      <PinPad keys={w.pinKeys} testIDPrefix="pin-key" keyHeight={66} fontSize={26} rowGap={10} style={[{ marginTop: 'auto' }, p(0, 44, 40)]} />
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { alignItems: 'center', justifyContent: 'center' },
+  warnRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, backgroundColor: '#141418' },
+  checkBox: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  seedBox: { marginTop: 14, marginHorizontal: 16, padding: 16, borderRadius: 24, backgroundColor: '#141418' },
+  word: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14 },
+  option: { height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  input: TEXTAREA,
+  pinKey: { borderRadius: '50%', alignItems: 'center', justifyContent: 'center' },
+});

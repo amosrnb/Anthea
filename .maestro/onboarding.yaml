@@ -1,0 +1,35 @@
+# Create a wallet through the prototype click path (mock data, Phase 0).
+appId: dev.anthea.wallet
+tags:
+  - onboarding
+---
+- launchApp:
+    clearState: true
+- assertVisible: 'Deine Schlüssel. Dein Gerät.'
+- tapOn: 'Neues Wallet erstellen'
+- assertVisible: 'Bevor es losgeht'
+- tapOn: 'Wer die Wörter kennt, besitzt das Geld.'
+- tapOn: 'Anthea kann sie nicht wiederherstellen.'
+- tapOn: 'Ich bewahre sie offline und sicher auf.'
+- tapOn: 'Wörter anzeigen'
+- assertVisible: 'Deine Wiederherstellungsphrase'
+- tapOn: 'Zum Anzeigen tippen'
+- tapOn: 'Ich habe sie notiert'
+- assertVisible: 'Kurz prüfen'
+# Mock seed (prototype): #3 harbor, #7 lemon, #11 pepper
+- tapOn: 'harbor'
+- tapOn: 'lemon'
+- tapOn: 'pepper'
+- tapOn: 'Weiter'
+- assertVisible: 'PIN festlegen'
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '123456'
+- assertVisible: 'PIN bestätigen'
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '123456'
+- assertVisible: 'GESAMTWERT'
+- assertVisible: 'Wallet bereit'

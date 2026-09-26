@@ -1,0 +1,35 @@
+# Tabs, lock/unlock and platform back navigation after onboarding.
+appId: dev.anthea.wallet
+tags:
+  - navigation
+---
+- runFlow: onboarding.yaml
+- tapOn: 'Märkte'
+- assertVisible: 'Coin suchen'
+- tapOn: 'Ethereum'
+- assertVisible: 'MARKTKAP.'
+# Platform back: Android back button, iOS swipe from the left screen edge
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          start: 1%, 50%
+          end: 80%, 50%
+- assertVisible: 'Coin suchen'
+- tapOn: 'Aktivität'
+- assertVisible: 'HEUTE'
+- tapOn: 'Einstellungen'
+- assertVisible: 'Wallet zurücksetzen'
+- tapOn: 'Jetzt sperren'
+- assertVisible: 'Anthea ist gesperrt'
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '123456'
+- assertVisible: 'GESAMTWERT'

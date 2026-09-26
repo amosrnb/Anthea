@@ -1,0 +1,15 @@
+# anthea-api: stateless data proxy (BUILD_PLAN 4.3). Secrets (market data, Etherscan) are added in Phase 4 via
+# `wrangler secret put`; never commit keys.
+name = "anthea-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+workers_dev = true
+# Keep Wrangler CLI telemetry off (BUILD_PLAN 2.4).
+send_metrics = false
+
+# No request logging, no log retention (BUILD_PLAN 2.4 / 4.3).
+[observability]
+enabled = false
+
+[vars]
+API_VERSION = "0.1.0"

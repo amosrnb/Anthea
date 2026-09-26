@@ -1,72 +1,95 @@
-import type { ComponentType } from 'react';
+import { BlurView } from 'expo-blur';
+import { useFonts } from 'expo-font';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
+import { BackHandler, Platform, StyleSheet, View, type GestureResponderEvent, type ViewProps } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { prototypeProps } from './config';
 import { IND, INK, NEG } from './data';
-import { Icon } from './icons';
-import { Activity, CheckBoxMark, Reveal, Rpc, Settings, TxDetail } from './screens/Account';
-import { Import, Pin, Seed, Verify, Warn, Welcome } from './screens/Onboarding';
+import { Activity, Reveal, Rpc, Settings, TxDetail } from './screens/Account';
+import { Import, Pin, PinDots, PinPad, Seed, Verify, Warn, Welcome } from './screens/Onboarding';
 import { CoinDetail, Home, Markets } from './screens/Portfolio';
-import { Status, Swap, SwapReview } from './screens/Swap';
+import { SlippageSheet, Status, Swap, SwapReview } from './screens/Swap';
 import { Receive, SendAmount, SendAsset, SendReview, SendTo } from './screens/Transfer';
+import { Btn, f, FONT_FILES, isWeb, MUTED, Sheet, Txt, useBottomExtra } from './ui';
+import { Icon, ToastCheck } from './ui/icons';
 import { useWallet, type Screen, type Wallet, type WalletProps } from './useWallet';
-import { f, MUTED, Sheet } from './ui';
 
 const SCREENS: Record<Screen, ComponentType<{ w: Wallet }>> = {
-  welcome: Welcome, warn: Warn, seed: Seed, verify: Verify, import: Import, pin: Pin,
-  home: Home, markets: Markets, coin: CoinDetail, receive: Receive,
-  sendAsset: SendAsset, sendTo: SendTo, sendAmt: SendAmount, sendReview: SendReview,
-  swap: Swap, swapReview: SwapReview, status: Status,
-  activity: Activity, tx: TxDetail, settings: Settings, rpc: Rpc, reveal: Reveal
+  welcome: Welcome,
+  warn: Warn,
+  seed: Seed,
+  verify: Verify,
+  import: Import,
+  pin: Pin,
+  home: Home,
+  markets: Markets,
+  coin: CoinDetail,
+  receive: Receive,
+  sendAsset: SendAsset,
+  sendTo: SendTo,
+  sendAmt: SendAmount,
+  sendReview: SendReview,
+  swap: Swap,
+  swapReview: SwapReview,
+  status: Status,
+  activity: Activity,
+  tx: TxDetail,
+  settings: Settings,
+  rpc: Rpc,
+  reveal: Reveal,
 };
 
-function StatusBar() {
+/**
+ * Web preview only: the page renders a 390×844 iPhone surface with the iPhone's 47 pt top safe area,
+ * so it can be compared 1:1 with the prototype. Native builds use the real safe-area insets.
+ */
+const WEB_TOP_INSET = 47;
+
+function Dock({ w }: { w: Wallet }) {
+  const extra = useBottomExtra();
+  const item = (n: Wallet['navLeft'][number]) => (
+    <Btn key={n.label} onPress={n.onClick} label={n.label} style={styles.dockItem}>
+      {n.icon}
+      <Txt style={[f(800, 10), { color: n.ink }]}>{n.label}</Txt>
+    </Btn>
+  );
   return (
-    <>
-      <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 104, height: 30, borderRadius: 16, background: '#000000', zIndex: 40 }} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 26px 0', flex: 'none' }}>
-        <span style={{ font: f(900, 15) }}>9:41</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <svg width="17" height="11" viewBox="0 0 17 11">
-            <rect x="0" y="7" width="3" height="4" rx="1" fill={INK} />
-            <rect x="4.5" y="5" width="3" height="6" rx="1" fill={INK} />
-            <rect x="9" y="2.5" width="3" height="8.5" rx="1" fill={INK} />
-            <rect x="13.5" y="0" width="3" height="11" rx="1" fill="rgba(247,247,245,.3)" />
-          </svg>
-          <span style={{ font: f(900, 10), background: INK, color: '#000000', borderRadius: 5, padding: '2px 5px' }}>100</span>
-        </span>
-      </div>
-    </>
+    <View style={[styles.dock, { bottom: 24 + extra }]}>
+      <BlurView tint="dark" intensity={100} style={styles.dockGlass} />
+      <View style={styles.dockRow}>
+        {w.navLeft.map(item)}
+        <View style={{ width: 74, alignItems: 'center' }}>
+          <Btn onPress={w.goSwap} label="Swappen" style={styles.dockSwap} hoverStyle={{ backgroundColor: '#7E70EB' }}>
+            <Icon name="swap" color="#FFFFFF" size={24} weight={2.6} />
+          </Btn>
+        </View>
+        {w.navRight.map(item)}
+      </View>
+    </View>
   );
 }
 
-function Dock({ w }: { w: Wallet }) {
-  const item = (n: Wallet['navLeft'][number]) => (
-    <button key={n.label} onClick={n.onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 0, padding: '6px 0', cursor: 'pointer', color: n.ink }}>
-      {n.icon}<span style={{ font: f(800, 10) }}>{n.label}</span>
-    </button>
-  );
-  return (
-    <nav style={{ position: 'absolute', left: 18, right: 18, bottom: 24, height: 66, borderRadius: 26, background: 'rgba(19,19,22,.78)', backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)', boxShadow: '0 18px 44px rgba(0,0,0,.55)', display: 'grid', gridTemplateColumns: '1fr 1fr 74px 1fr 1fr', alignItems: 'center', padding: '0 6px', zIndex: 10 }}>
-      {w.navLeft.map(item)}
-      <div style={{ display: 'grid', placeItems: 'center' }}>
-        <button className="dock-swap" onClick={w.goSwap} aria-label="Swappen" style={{ width: 56, height: 56, borderRadius: 20, border: 0, background: IND, display: 'grid', placeItems: 'center', cursor: 'pointer', boxShadow: '0 10px 26px rgba(108,92,231,.32)' }}>
-          <Icon name="swap" color="#FFFFFF" size={24} weight={2.6} />
-        </button>
-      </div>
-      {w.navRight.map(item)}
-    </nav>
-  );
-}
+const CheckBoxMark = () => <Icon name="check" color="#FFFFFF" size={14} weight={3} />;
 
 function ResetSheet({ w }: { w: Wallet }) {
   return (
     <Sheet onClose={w.closeReset} scrim={0.6} z={30}>
-      <h3 style={{ margin: '16px 4px 6px', font: f(900, 21) }}>Wallet zurücksetzen?</h3>
-      <p style={{ margin: '0 4px', font: f(700, 13.5, 1.5), color: MUTED }}>Alle Schlüssel und Daten werden von diesem Gerät gelöscht. Ohne Phrase ist dein Guthaben verloren. Anthea kann sie nicht wiederherstellen.</p>
-      <button onClick={w.toggleResetChk} role="checkbox" aria-checked={w.resetChk}
-        style={{ marginTop: 16, width: '100%', border: 0, display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, background: '#141418', cursor: 'pointer', textAlign: 'left' }}>
-        <span style={{ flex: 'none', width: 24, height: 24, borderRadius: 8, background: w.resetChk ? NEG : '#2A2A32', display: 'grid', placeItems: 'center' }}>{w.resetChk && <CheckBoxMark />}</span>
-        <span style={{ font: f(800, 14), color: INK }}>Ich habe meine Phrase gesichert</span>
-      </button>
-      <button onClick={w.doReset} style={{ marginTop: 12, width: '100%', height: 54, border: 0, borderRadius: 20, background: NEG, color: '#2A0D08', font: f(900, 15.5), cursor: 'pointer', opacity: w.resetChk ? 1 : 0.4 }}>Endgültig zurücksetzen</button>
+      <Txt accessibilityRole="header" style={[f(900, 21), { marginTop: 16, marginHorizontal: 4, marginBottom: 6 }]}>
+        Wallet zurücksetzen?
+      </Txt>
+      <Txt style={[f(700, 13.5, 1.5), { marginHorizontal: 4, color: MUTED }]}>
+        Alle Schlüssel und Daten werden von diesem Gerät gelöscht. Ohne Phrase ist dein Guthaben verloren. Anthea kann sie nicht wiederherstellen.
+      </Txt>
+      <Btn onPress={w.toggleResetChk} role="checkbox" checked={w.resetChk} style={styles.resetCheck}>
+        <View style={[styles.center, { width: 24, height: 24, borderRadius: 8, backgroundColor: w.resetChk ? NEG : '#2A2A32' }]}>
+          {w.resetChk && <CheckBoxMark />}
+        </View>
+        <Txt style={[f(800, 14), { color: INK }]}>Ich habe meine Phrase gesichert</Txt>
+      </Btn>
+      <Btn onPress={w.doReset} style={[styles.center, styles.resetBtn, { opacity: w.resetChk ? 1 : 0.4 }]}>
+        <Txt style={[f(900, 15.5), { color: '#2A0D08' }]}>Endgültig zurücksetzen</Txt>
+      </Btn>
     </Sheet>
   );
 }
@@ -75,47 +98,138 @@ function ResetSheet({ w }: { w: Wallet }) {
 function ConfirmSheet({ w }: { w: Wallet }) {
   return (
     <Sheet onClose={w.closeConfirm} scrim={0.6} z={35}>
-      <h3 style={{ margin: '16px 4px 4px', font: f(900, 21), textAlign: 'center' }}>PIN eingeben</h3>
-      <p style={{ margin: 0, font: f(700, 13.5, 1.5), color: MUTED, textAlign: 'center' }}>Signatur auf diesem Gerät</p>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 20 }}>
-        {w.confirmDots.map((bg, i) => <span key={i} style={{ width: 14, height: 14, borderRadius: '50%', background: bg }} />)}
-      </div>
-      <div role="alert" style={{ height: 18, marginTop: 10, font: f(800, 13), color: NEG, textAlign: 'center' }}>{w.confirmError}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px 22px', padding: '6px 24px 0' }}>
-        {w.confirmKeys.map((k, i) => (
-          <button key={i} className="key key--pin" onClick={k.onClick} aria-label={k.label || (k.icon ? 'Löschen' : undefined)}
-            style={{ ['--bg' as string]: k.bg, height: 58, border: 0, borderRadius: '50%', color: INK, font: f(900, 24), cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
-            {k.label}{k.icon}
-          </button>
-        ))}
-      </div>
+      <Txt accessibilityRole="header" style={[f(900, 21), { marginTop: 16, marginHorizontal: 4, marginBottom: 4, textAlign: 'center' }]}>
+        PIN eingeben
+      </Txt>
+      <Txt style={[f(700, 13.5, 1.5), { color: MUTED, textAlign: 'center' }]}>Signatur auf diesem Gerät</Txt>
+      <View style={{ alignItems: 'center', marginTop: 20 }}>
+        <PinDots dots={w.confirmDots} />
+      </View>
+      <Txt accessibilityRole="alert" style={[f(800, 13), { height: 18, marginTop: 10, color: NEG, textAlign: 'center' }]}>
+        {w.confirmError}
+      </Txt>
+      <PinPad keys={w.confirmKeys} testIDPrefix="confirm-key" keyHeight={58} fontSize={24} rowGap={8} style={{ paddingTop: 6, paddingHorizontal: 24 }} />
     </Sheet>
   );
 }
 
 function Toast({ text }: { text: string }) {
+  const extra = useBottomExtra();
   return (
-    <div role="status" style={{ position: 'absolute', left: 16, right: 16, bottom: 104, zIndex: 36, display: 'flex', alignItems: 'center', gap: 11, background: 'rgba(30,30,35,.95)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 20, padding: '14px 16px', boxShadow: '0 18px 44px rgba(0,0,0,.6)' }}>
-      <span style={{ flex: 'none', width: 24, height: 24, borderRadius: 8, background: IND, display: 'grid', placeItems: 'center' }}>
-        <svg width="12" height="9" viewBox="0 0 13 10" fill="none" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round"><path d="M1.5 5 4.8 8.3 11.5 1.6" /></svg>
-      </span>
-      <span style={{ font: f(800, 14, 1.35) }}>{text}</span>
-    </div>
+    <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.toast, { bottom: 104 + extra }]}>
+      <BlurView tint="dark" intensity={90} style={styles.toastGlass} />
+      <View style={[styles.toastGlass, { backgroundColor: 'rgba(30,30,35,.95)' }]} />
+      <View style={[styles.center, { width: 24, height: 24, borderRadius: 8, backgroundColor: IND }]}>
+        <ToastCheck />
+      </View>
+      <Txt style={[f(800, 14, 1.35), { flexShrink: 1 }]}>{text}</Txt>
+    </View>
   );
 }
 
-export default function App(props: WalletProps) {
+/**
+ * Platform back navigation: Android back button/gesture via BackHandler, and on iOS a swipe right from the left
+ * screen edge (like a native stack). Both call `onBack`, which returns false on root screens so Android can
+ * leave the app.
+ */
+function useSystemBack(onBack: () => boolean): ViewProps {
+  const back = useRef(onBack);
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    back.current = onBack;
+  });
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => back.current());
+    return () => sub.remove();
+  }, []);
+  if (Platform.OS !== 'ios') return {};
+  const delta = (e: GestureResponderEvent) => (touch.current ? { dx: e.nativeEvent.pageX - touch.current.x, dy: e.nativeEvent.pageY - touch.current.y } : null);
+  return {
+    onStartShouldSetResponderCapture: (e) => {
+      touch.current = e.nativeEvent.pageX < 24 ? { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY } : null;
+      return false;
+    },
+    onMoveShouldSetResponderCapture: (e) => {
+      const d = delta(e);
+      return !!d && d.dx > 12 && Math.abs(d.dy) < d.dx;
+    },
+    onResponderRelease: (e) => {
+      const d = delta(e);
+      touch.current = null;
+      if (d && d.dx > 70) back.current();
+    },
+    onResponderTerminate: () => {
+      touch.current = null;
+    },
+  };
+}
+
+function Device(props: WalletProps) {
   const w = useWallet(props);
+  const insets = useSafeAreaInsets();
   const Current = SCREENS[w.screen];
+  const backGesture = useSystemBack(w.systemBack);
+
   return (
-    <div className="device">
-      <StatusBar />
+    <View testID="device" style={[styles.device, { paddingTop: isWeb ? WEB_TOP_INSET : insets.top }]} {...backGesture}>
+      <StatusBar style="light" />
       <Current w={w} />
       {w.showDock && <Dock w={w} />}
+      {w.slipOpen && w.screen === 'swap' && <SlippageSheet w={w} />}
       {w.resetOpen && <ResetSheet w={w} />}
       {w.confirmOpen && <ConfirmSheet w={w} />}
       {w.toast && <Toast text={w.toast} />}
-      <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 134, height: 5, borderRadius: 3, background: 'rgba(247,247,245,.24)', zIndex: 40 }} />
-    </div>
+    </View>
   );
 }
+
+export default function App({ walletProps }: { walletProps?: WalletProps }) {
+  const [fontsLoaded] = useFonts(FONT_FILES);
+  const [props] = useState(() => walletProps ?? prototypeProps());
+  return (
+    <SafeAreaProvider style={styles.stage}>
+      {fontsLoaded ? (
+        <View style={isWeb ? styles.webFrame : styles.fill}>
+          <Device {...props} />
+        </View>
+      ) : null}
+    </SafeAreaProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  stage: { flex: 1, backgroundColor: '#000000', alignItems: isWeb ? 'center' : 'stretch', justifyContent: 'center' },
+  fill: { flex: 1 },
+  webFrame: { width: 390, height: 844, overflow: 'hidden' },
+  device: { flex: 1, backgroundColor: '#000000' },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  dock: { position: 'absolute', left: 18, right: 18, height: 66, borderRadius: 26, boxShadow: '0 18px 44px rgba(0,0,0,.55)', zIndex: 10 },
+  dockGlass: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: 26, overflow: 'hidden' },
+  dockRow: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6 },
+  dockItem: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 6 },
+  dockSwap: {
+    width: 56,
+    height: 56,
+    borderRadius: 20,
+    backgroundColor: IND,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 10px 26px rgba(108,92,231,.32)',
+  },
+  resetCheck: { marginTop: 16, width: '100%', flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, backgroundColor: '#141418' },
+  resetBtn: { marginTop: 12, width: '100%', height: 54, borderRadius: 20, backgroundColor: NEG },
+  toast: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    zIndex: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    boxShadow: '0 18px 44px rgba(0,0,0,.6)',
+  },
+  toastGlass: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: 20, overflow: 'hidden' },
+});

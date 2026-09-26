@@ -1,0 +1,17 @@
+# Types the 6-digit ${PIN} on a PIN keypad. KEYPAD is "pin-key" (PIN screen, default) or "confirm-key" (signing sheet).
+appId: dev.anthea.wallet
+env:
+  KEYPAD: pin-key
+---
+- tapOn:
+    id: ${KEYPAD + '-' + PIN.charAt(0)}
+- tapOn:
+    id: ${KEYPAD + '-' + PIN.charAt(1)}
+- tapOn:
+    id: ${KEYPAD + '-' + PIN.charAt(2)}
+- tapOn:
+    id: ${KEYPAD + '-' + PIN.charAt(3)}
+- tapOn:
+    id: ${KEYPAD + '-' + PIN.charAt(4)}
+- tapOn:
+    id: ${KEYPAD + '-' + PIN.charAt(5)}

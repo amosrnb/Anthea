@@ -1,0 +1,37 @@
+import type { ExpoConfig } from 'expo/config';
+
+// Placeholder app ID for development builds. The final ID depends on the domain Anthea will own
+// (BUILD_PLAN 13.1 #9 and open point 13.2 #2) and cannot be changed after the first store release.
+// TODO(13.2): replace with the reverse-domain ID before the first release.
+const APP_ID = 'dev.anthea.wallet';
+
+const config: ExpoConfig = {
+  name: 'Anthea',
+  slug: 'anthea',
+  version: '0.1.0',
+  orientation: 'portrait',
+  icon: './assets/icon.png',
+  userInterfaceStyle: 'dark',
+  backgroundColor: '#000000',
+  ios: {
+    bundleIdentifier: APP_ID,
+    supportsTablet: false,
+    infoPlist: { ITSAppUsesNonExemptEncryption: false },
+  },
+  android: {
+    package: APP_ID,
+    // Keep wallet data out of Google cloud backup and device transfer (BUILD_PLAN 5.2 #6).
+    allowBackup: false,
+    adaptiveIcon: {
+      backgroundColor: '#000000',
+      foregroundImage: './assets/android-icon-foreground.png',
+      backgroundImage: './assets/android-icon-background.png',
+      monochromeImage: './assets/android-icon-monochrome.png',
+    },
+    predictiveBackGestureEnabled: false,
+  },
+  web: { favicon: './assets/favicon.png' },
+  plugins: ['expo-font'],
+};
+
+export default config;

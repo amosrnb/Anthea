@@ -5,7 +5,10 @@ export const short = (a: string) => (a ? a.slice(0, 6) + '…' + a.slice(-4) : '
 export const nf = (n: number, d: number) => Number(n).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
 export const pc = (c: number | null) => (c == null ? '' : (c >= 0 ? '+' : '−') + nf(Math.abs(c), 2) + ' %');
 
-export interface ChartPaths { line: string; area: string }
+export interface ChartPaths {
+  line: string;
+  area: string;
+}
 
 /** Deterministic pseudo price series rendered as a smoothed SVG path in a W×H box. */
 export function chart(seed: number, n: number, vol: number, trend: number, W: number, H: number): ChartPaths {
@@ -19,12 +22,13 @@ export function chart(seed: number, n: number, vol: number, trend: number, W: nu
   const lo = Math.min(...vs);
   const span = Math.max(...vs) - lo || 1;
   const xy = pts.map((p) => ({ x: p.x, y: 4 + (1 - (p.v - lo) / span) * (H - 8) }));
-  let line = 'M' + xy[0].x.toFixed(1) + ' ' + xy[0].y.toFixed(1);
+  let line = 'M' + xy[0]!.x.toFixed(1) + ' ' + xy[0]!.y.toFixed(1);
   for (let i = 1; i < xy.length; i++) {
-    const a = xy[i - 1], b = xy[i];
+    const a = xy[i - 1]!,
+      b = xy[i]!;
     line += ' Q' + a.x.toFixed(1) + ' ' + a.y.toFixed(1) + ' ' + ((a.x + b.x) / 2).toFixed(1) + ' ' + ((a.y + b.y) / 2).toFixed(1);
   }
-  const l = xy[xy.length - 1];
+  const l = xy[xy.length - 1]!;
   line += ' L' + l.x.toFixed(1) + ' ' + l.y.toFixed(1);
   return { line, area: line + ' L' + W + ' ' + H + ' L0 ' + H + ' Z' };
 }
@@ -34,17 +38,25 @@ export function qrCells(addr: string): string[] {
   const N = 29;
   const seedQ = addr.split('').reduce((s, ch) => s + ch.charCodeAt(0), 0);
   const cells: string[] = [];
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-    let f = -1;
-    for (const [r0, c0] of [[0, 0], [0, N - 7], [N - 7, 0]]) {
-      if (r >= r0 && r < r0 + 7 && c >= c0 && c < c0 + 7) {
-        f = r === r0 || r === r0 + 6 || c === c0 || c === c0 + 6 || (r >= r0 + 2 && r <= r0 + 4 && c >= c0 + 2 && c <= c0 + 4) ? 1 : 0;
+  for (let r = 0; r < N; r++)
+    for (let c = 0; c < N; c++) {
+      let f = -1;
+      for (const [r0, c0] of [
+        [0, 0],
+        [0, N - 7],
+        [N - 7, 0],
+      ] as [number, number][]) {
+        if (r >= r0 && r < r0 + 7 && c >= c0 && c < c0 + 7) {
+          f = r === r0 || r === r0 + 6 || c === c0 || c === c0 + 6 || (r >= r0 + 2 && r <= r0 + 4 && c >= c0 + 2 && c <= c0 + 4) ? 1 : 0;
+        }
       }
+      if (f >= 0) {
+        cells.push(f ? '#000000' : INK);
+        continue;
+      }
+      const h = Math.sin(r * 12.9898 + c * 78.233 + seedQ) * 43758.5453;
+      cells.push(!(r > 10 && r < 18 && c > 10 && c < 18) && h - Math.floor(h) > 0.5 ? '#000000' : INK);
     }
-    if (f >= 0) { cells.push(f ? '#000000' : INK); continue; }
-    const h = Math.sin(r * 12.9898 + c * 78.233 + seedQ) * 43758.5453;
-    cells.push(!(r > 10 && r < 18 && c > 10 && c < 18) && h - Math.floor(h) > 0.5 ? '#000000' : INK);
-  }
   return cells;
 }
 
@@ -65,7 +77,10 @@ export function validateAddress(addr: string, fam: Family, sym: string, net: str
   const r = RECENT[fam];
   if (a === r) return { kind: 'ok', text: 'Bekannter Empfänger · zuletzt am 12. Sep.' };
   if (a.slice(0, 6) === r.slice(0, 6) && a.slice(-4) === r.slice(-4)) {
-    return { kind: 'warn', text: 'Ähnelt einer Adresse aus deinem Verlauf, ist aber nicht identisch. Möglicher Address-Poisoning-Angriff. Prüfe jedes Zeichen.' };
+    return {
+      kind: 'warn',
+      text: 'Ähnelt einer Adresse aus deinem Verlauf, ist aber nicht identisch. Möglicher Address-Poisoning-Angriff. Prüfe jedes Zeichen.',
+    };
   }
   return { kind: 'info', text: 'Erstmaliger Empfänger. Prüfe die Adresse sorgfältig.' };
 }
