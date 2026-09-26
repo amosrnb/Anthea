@@ -11,6 +11,11 @@ module.exports = defineConfig([
     languageOptions: { globals: { jest: 'readonly' } },
   },
   {
+    // server/ has its own dependencies, installed only in the CI server job; its typecheck verifies imports.
+    files: ['server/**'],
+    rules: { 'import/no-unresolved': 'off' },
+  },
+  {
     ignores: ['dist/**', 'prototype/**', 'server/node_modules/**', 'server/.wrangler/**', 'android/**', 'ios/**', 'project/**', 'coverage/**'],
   },
 ]);
