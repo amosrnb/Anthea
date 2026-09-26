@@ -13,7 +13,8 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "jest"
+    "test": "jest",
+    "e2e": "maestro test .maestro"
   },
   "dependencies": {
     "@expo/metro-runtime": "57.0.16",

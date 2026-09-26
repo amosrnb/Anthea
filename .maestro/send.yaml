@@ -1,0 +1,26 @@
+# Send flow with PIN confirmation (mock data, Phase 0).
+appId: dev.anthea.wallet
+tags:
+  - send
+---
+- runFlow: onboarding.yaml
+- tapOn: 'Senden'
+- tapOn: 'USDC'
+- tapOn: 'Einfügen'
+- assertVisible: '.*Address-Poisoning-Angriff.*'
+- tapOn: '0x71C9…04Ae'
+- tapOn: 'Weiter'
+- tapOn: '2'
+- tapOn: '5'
+- tapOn: 'Prüfen'
+- assertVisible: '25,00 USDC'
+- tapOn: 'Mit PIN bestätigen'
+- assertVisible: 'Signatur auf diesem Gerät'
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '123456'
+      KEYPAD: confirm-key
+- assertVisible: 'Gesendet'
+- tapOn: 'Fertig'
+- assertVisible: 'GESAMTWERT'

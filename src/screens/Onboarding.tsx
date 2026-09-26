@@ -234,8 +234,11 @@ export function PinPad({
   fontSize,
   rowGap,
   style,
+  testIDPrefix,
 }: {
   keys: Wallet['pinKeys'];
+  /** Test IDs `<prefix>-0`…`<prefix>-9` for the digit keys (E2E tests). */
+  testIDPrefix: string;
   keyHeight: number;
   fontSize: number;
   rowGap: number;
@@ -248,6 +251,7 @@ export function PinPad({
           key={i}
           onPress={k.onClick}
           label={k.label || (k.icon ? 'Löschen' : undefined)}
+          testID={k.label ? `${testIDPrefix}-${k.label}` : undefined}
           style={[styles.pinKey, { height: keyHeight, backgroundColor: k.bg }]}
           activeStyle={{ backgroundColor: '#2A2A32' }}
         >
@@ -287,7 +291,7 @@ export function Pin({ w }: { w: Wallet }) {
           {w.pinError}
         </Txt>
       </View>
-      <PinPad keys={w.pinKeys} keyHeight={66} fontSize={26} rowGap={10} style={[{ marginTop: 'auto' }, p(0, 44, 40)]} />
+      <PinPad keys={w.pinKeys} testIDPrefix="pin-key" keyHeight={66} fontSize={26} rowGap={10} style={[{ marginTop: 'auto' }, p(0, 44, 40)]} />
     </Screen>
   );
 }

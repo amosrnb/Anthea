@@ -7,6 +7,10 @@ module.exports = defineConfig([
   expoConfig,
   prettier,
   {
+    files: ['jest.setup.js', '**/__tests__/**'],
+    languageOptions: { globals: { jest: 'readonly' } },
+  },
+  {
     ignores: ['dist/**', 'prototype/**', 'server/**', 'android/**', 'ios/**', 'project/**', 'coverage/**'],
   },
 ]);

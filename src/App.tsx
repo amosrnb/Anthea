@@ -108,7 +108,7 @@ function ConfirmSheet({ w }: { w: Wallet }) {
       <Txt accessibilityRole="alert" style={[f(800, 13), { height: 18, marginTop: 10, color: NEG, textAlign: 'center' }]}>
         {w.confirmError}
       </Txt>
-      <PinPad keys={w.confirmKeys} keyHeight={58} fontSize={24} rowGap={8} style={{ paddingTop: 6, paddingHorizontal: 24 }} />
+      <PinPad keys={w.confirmKeys} testIDPrefix="confirm-key" keyHeight={58} fontSize={24} rowGap={8} style={{ paddingTop: 6, paddingHorizontal: 24 }} />
     </Sheet>
   );
 }
@@ -183,9 +183,9 @@ function Device(props: WalletProps) {
   );
 }
 
-export default function App() {
+export default function App({ walletProps }: { walletProps?: WalletProps }) {
   const [fontsLoaded] = useFonts(FONT_FILES);
-  const [props] = useState(prototypeProps);
+  const [props] = useState(() => walletProps ?? prototypeProps());
   return (
     <SafeAreaProvider style={styles.stage}>
       {fontsLoaded ? (
