@@ -11,6 +11,6 @@ module.exports = defineConfig([
     languageOptions: { globals: { jest: 'readonly' } },
   },
   {
-    ignores: ['dist/**', 'prototype/**', 'server/**', 'android/**', 'ios/**', 'project/**', 'coverage/**'],
+    ignores: ['dist/**', 'prototype/**', 'server/node_modules/**', 'server/.wrangler/**', 'android/**', 'ios/**', 'project/**', 'coverage/**'],
   },
 ]);
