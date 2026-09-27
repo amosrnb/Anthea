@@ -29,6 +29,9 @@ const config: ExpoConfig = {
       monochromeImage: './assets/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
+    // expo-screen-capture declares these for screenshot detection on older Android; Anthea only uses FLAG_SECURE
+    // there and must not read the user's photos or storage.
+    blockedPermissions: ['android.permission.READ_EXTERNAL_STORAGE', 'android.permission.READ_MEDIA_IMAGES', 'android.permission.DETECT_SCREEN_CAPTURE'],
   },
   web: { favicon: './assets/favicon.png' },
   plugins: [

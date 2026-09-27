@@ -11,7 +11,7 @@ module.exports = {
   testTimeout: 30000,
   // @noble/*, @scure/* and micro-* ship ES modules only; let Babel transform them like the React Native packages.
   transformIgnorePatterns: [
-    preset.transformIgnorePatterns[0].replace('(?!(', '(?!(@noble|@scure|micro-key-producer|micro-packed|'),
+    preset.transformIgnorePatterns[0].replace('(?!(', '(?!(@noble|@scure|micro-key-producer|micro-packed|uqr|'),
     ...preset.transformIgnorePatterns.slice(1),
   ],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/__tests__/**'],
