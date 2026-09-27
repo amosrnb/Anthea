@@ -84,3 +84,16 @@ export function validateAddress(addr: string, fam: Family, sym: string, net: str
   }
   return { kind: 'info', text: 'Erstmaliger Empfänger. Prüfe die Adresse sorgfältig.' };
 }
+
+/**
+ * Fisher–Yates shuffle into a new array. Only for UI ordering (verification options); `rand` defaults to Math.random
+ * because the order is not secret. Phase 2 draws the verified positions and wrong words with a CSPRNG.
+ */
+export function shuffled<T>(items: readonly T[], rand: () => number = Math.random): T[] {
+  const out = items.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}

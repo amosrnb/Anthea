@@ -31,6 +31,12 @@ import type { Wallet } from '../useWallet';
 import { SEED_INPUT_PROPS } from './Onboarding';
 import { Tag } from './Portfolio';
 
+/**
+ * Lets the address wrap between any two characters, like the prototype's `word-break: break-all` (native Text only
+ * breaks at spaces). Display only: never copy or share this string, it contains zero-width spaces.
+ */
+const breakAnywhere = (text: string) => text.split('').join('\u200B');
+
 const TwoLineTitle = ({ title, sub }: { title: string; sub: string }) => (
   <View style={{ flexShrink: 1 }}>
     <HeaderTitle>{title}</HeaderTitle>
@@ -70,7 +76,7 @@ export function Receive({ w }: { w: Wallet }) {
           <QrMatrix cells={w.qr} />
           <View style={styles.qrLogo} />
         </View>
-        <Txt style={[f(800, 16, 1.5), { marginTop: 18, maxWidth: 300, textAlign: 'center', letterSpacing: 0.6 }, TNUM]}>{w.rcvAddr}</Txt>
+        <Txt style={[f(800, 16, 1.5), { marginTop: 18, maxWidth: 300, textAlign: 'center', letterSpacing: 0.6 }, TNUM]}>{breakAnywhere(w.rcvAddr)}</Txt>
         <Txt style={[f(800, 12.5), { marginTop: 6, color: MUTED }]}>{w.rcvNote}</Txt>
       </View>
       <View style={[styles.warnBox, p(14, 16)]}>
