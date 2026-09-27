@@ -19,6 +19,8 @@ export const STORE_KEYS = {
   accounts: 'anthea.accounts',
   /** Written during PIN change before replacing the vault (atomic re-encryption, BUILD_PLAN 5.3). */
   vaultNext: 'anthea.vault.next',
+  /** Wrong-PIN counter and lockout (state/session.ts); survives restarts, cleared only by a correct PIN or reset. */
+  pinAttempts: 'anthea.pinAttempts',
 } as const;
 
 export type KeyringErrorCode = 'no-wallet' | 'wallet-exists' | 'device-secret-missing' | 'wrong-pin';
@@ -160,7 +162,13 @@ export function createKeyring({ store, kdf, scrypt = DEFAULT_SCRYPT }: KeyringDe
       }
     },
 
-    /** Deletes vault, device secret and public data (BUILD_PLAN 5.3 "Wallet zurücksetzen"). */
+    /** Replaces the stored public data, e.g. after the Bitcoin scan found more used addresses. */
+    async saveAccounts(accounts: AccountPublic): Promise<void> {
+      if (!(await this.hasWallet())) throw new KeyringError('no-wallet');
+      await store.set(STORE_KEYS.accounts, JSON.stringify(accounts));
+    },
+
+    /** Deletes vault, device secret, public data and the PIN attempt counter (BUILD_PLAN 5.3 "Wallet zurücksetzen"). */
     async reset(): Promise<void> {
       for (const key of Object.values(STORE_KEYS)) await store.delete(key);
     },
