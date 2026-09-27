@@ -31,7 +31,13 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
   },
   web: { favicon: './assets/favicon.png' },
-  plugins: ['expo-font'],
+  plugins: [
+    'expo-font',
+    // No biometrics in v1 (BUILD_PLAN 13.1 #3): no Face ID usage description. The default Android backup and
+    // data-extraction rules keep secure-store data out of cloud backup and device-to-device transfer (5.2 #6).
+    ['expo-secure-store', { faceIDPermission: false }],
+    'react-native-quick-crypto',
+  ],
 };
 
 export default config;
