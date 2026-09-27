@@ -111,7 +111,7 @@ react-native-quick-crypto, drei Läufe). Ziel laut 5.2: ca. 0,5–1 s auf einem 
 
 | Maßnahme | Phase | Stand |
 |---|---|---|
-| Screenshot-Schutz auf Seed-, Verify-, Import- und Reveal-Screens (Android `FLAG_SECURE`; iOS Aufnahme abdecken, Screenshot-Warnung) | 2 | umgesetzt (`src/platform/screenCapture.ts`); Android-Berechtigung `DETECT_SCREEN_CAPTURE` bewusst entfernt |
+| Screenshot-Schutz auf Seed-, Verify-, Import- und Reveal-Screens (Android `FLAG_SECURE`; iOS Aufnahme abdecken, Screenshot-Warnung) | 2 | umgesetzt (`src/platform/screenCapture.ts`); Speicher- und Foto-Berechtigungen des Moduls entfernt; `DETECT_SCREEN_CAPTURE` (Android 14+, nur Meldung „Screenshot gemacht“, kein Zugriff auf Inhalte) bleibt, weil das Modul sonst beim Start abstürzt |
 | Seed-Eingabefelder ohne Autokorrektur, Vorschläge, Autofill und Kontextmenü | 0/2 | Props gesetzt (`SEED_INPUT_PROPS`); `keyboardType="visible-password"` (Android) noch offen, weil es mit mehrzeiligen Feldern kollidiert |
 | Verdeckte Seed-Wörter werden nicht gerendert (nur Platzhalter) | 0 | umgesetzt |
 | Backup/Gerätetransfer: `allowBackup=false` und Data-Extraction-Rules für den Secure Store (Android 12+) | 1 | umgesetzt (expo-secure-store-Plugin) |

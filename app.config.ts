@@ -30,8 +30,9 @@ const config: ExpoConfig = {
     },
     predictiveBackGestureEnabled: false,
     // expo-screen-capture declares these for screenshot detection on older Android; Anthea only uses FLAG_SECURE
-    // there and must not read the user's photos or storage.
-    blockedPermissions: ['android.permission.READ_EXTERNAL_STORAGE', 'android.permission.READ_MEDIA_IMAGES', 'android.permission.DETECT_SCREEN_CAPTURE'],
+    // there and must not read the user's photos or storage. DETECT_SCREEN_CAPTURE (Android 14+, install-time, no
+    // access to screen content) must stay: the module registers its capture callback on startup and crashes without it.
+    blockedPermissions: ['android.permission.READ_EXTERNAL_STORAGE', 'android.permission.READ_MEDIA_IMAGES'],
   },
   web: { favicon: './assets/favicon.png' },
   plugins: [
