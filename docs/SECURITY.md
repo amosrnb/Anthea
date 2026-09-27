@@ -3,8 +3,9 @@
 Dieses Dokument beschreibt das Sicherheitsmodell von Anthea v1 (Quelle: `docs/BUILD_PLAN.md`, Abschnitte 2, 5 und 7) und
 den Umsetzungsstand. Es wird mit jeder Phase fortgeschrieben; die Threat-Model-Checkliste wird in Phase 10 abgehakt.
 
-**Stand:** Phase 0. Die App ist eine Portierung der Oberfläche mit Mock-Daten. Es gibt noch **keine** echten Schlüssel,
-keine Verschlüsselung und keine Netzwerkzugriffe. Der Build darf nicht mit echten Werten verwendet werden.
+**Stand:** Phase 1. Der kryptografische Kern (Phrase, Ableitung, Vault, `withSigner`) ist umgesetzt und getestet
+(`src/core/`, `src/state/keyring.ts`), aber noch **nicht** mit der Oberfläche verbunden; die App zeigt weiterhin
+Mock-Daten (Anbindung in Phase 2). Keine Netzwerkzugriffe. Der Build darf nicht mit echten Werten verwendet werden.
 
 ## 1. Grundsätze
 
@@ -21,7 +22,7 @@ keine Verschlüsselung und keine Netzwerkzugriffe. Der Build darf nicht mit echt
 7. **Kompromittierter Proxy ≠ Geldverlust:** Guthaben, Gebühren, Simulation, Broadcast und Status laufen direkt vom
    Gerät über RPC; Swaps direkt zu LI.FI bzw. Jupiter. Ein manipulierter Proxy kann nur Anzeigewerte verfälschen.
 
-## 2. Schlüsselableitung (Phase 1)
+## 2. Schlüsselableitung (Phase 1, umgesetzt: `src/core/mnemonic.ts`, `src/core/derive.ts`)
 
 | Familie | Pfad | Hinweis |
 |---|---|---|
@@ -30,11 +31,16 @@ keine Verschlüsselung und keine Netzwerkzugriffe. Der Build darf nicht mit echt
 | Solana | `m/44'/501'/0'/0'` (SLIP-0010, ed25519) | kompatibel mit Phantom/Solflare |
 | Bitcoin | BIP84: Empfang `m/84'/0'/0'/0/i`, Wechselgeld `m/84'/0'/0'/1/i`; Testnetz Coin-Type `1'` | Gap-Limit 20, nach Nutzung neue Adresse |
 
-Pflicht-Testvektoren: `test test … junk` → EVM `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`; `abandon … about` → erste
-BIP84-Adresse `bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu`; Solana gegen einen dokumentierten Vektor; offizielle
-BIP39-Vektoren (Trezor).
+Pflicht-Testvektoren (alle grün, `src/core/__tests__/derive.test.ts`, `mnemonic.test.ts`):
+`test test … junk` → EVM `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`; `abandon … about` → BIP84
+`bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu` (plus zweite Empfangs- und erste Wechselgeldadresse aus BIP84);
+Solana `abandon … about` → `HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk`, gegengeprüft mit einer unabhängigen
+Implementierung (ed25519-hd-key + tweetnacl); alle 24 englischen BIP39-Vektoren der Trezor-Referenz.
 
-## 3. Vault: Verschlüsselung des Seeds (Phase 1)
+Private Schlüssel entstehen nur in `deriveKey`; Zwischenknoten werden überschrieben. `derivePublic` liefert nur
+Adressen.
+
+## 3. Vault: Verschlüsselung des Seeds (Phase 1, umgesetzt: `src/core/vault.ts`)
 
 Eine 6-stellige PIN hat nur 10⁶ Möglichkeiten. Ein nur PIN-verschlüsselter Seed wäre offline schnell geknackt. Deshalb
 hängt der Schlüssel zusätzlich an einem Gerätegeheimnis:
@@ -50,8 +56,27 @@ hängt der Schlüssel zusätzlich an einem Gerätegeheimnis:
 6. Backups: Android `allowBackup=false` (bereits in `app.config.ts` gesetzt) bzw. Data-Extraction-Rules; iOS schließt
    nicht geheime Wallet-Dateien vom iCloud-Backup aus.
 
-Einziger Weg an Schlüsselmaterial ist `withSigner(pin, family, index, fn)`: Seed entschlüsseln, nur den benötigten
-Schlüssel ableiten, `fn` ausführen, danach alle Byte-Arrays mit Nullen überschreiben (best effort).
+Format: `{"h": <Header-JSON>, "c": <Base64-Ciphertext>}`. Der Header (`v`, `kdf`, `N`, `r`, `p`, `salt`, `nonce`) wird
+wortgleich gespeichert, weil seine Bytes die Associated Data sind: Jede Änderung, auch an den KDF-Parametern, lässt
+die Entschlüsselung scheitern. Falsche PIN, fremdes `deviceSecret` und manipulierter Ciphertext führen zum selben
+Fehler (`decrypt-failed`); Fehlermeldungen enthalten nie PINs, Schlüssel oder Klartext. Header mit unplausiblen
+Parametern (N > 2^20, r > 32, p > 16) werden abgelehnt.
+
+Einziger Weg an Schlüsselmaterial ist `withSigner(pin, family, index, fn)` (`src/state/keyring.ts`): Vault
+entschlüsseln, nur den benötigten Schlüssel ableiten, `fn` ausführen, danach Entropie, Seed und privaten Schlüssel
+mit Nullen überschreiben (best effort, auch wenn `fn` wirft). Die entsperrte Sitzung hält nur öffentliche Adressen.
+PIN ändern schreibt den neuen Vault zuerst unter einen temporären Schlüssel, prüft ihn und ersetzt erst dann den alten.
+
+### KDF-Dauer (Abnahme Phase 1)
+
+Gemessen im Development Build über das Expo-Entwicklermenü → „Vault-KDF messen“ (scrypt N=2^17, r=8, p=1,
+react-native-quick-crypto, drei Läufe). Ziel laut 5.2: ca. 0,5–1 s auf einem Mittelklasse-Gerät.
+
+| Gerät | Messung | Datum |
+|---|---|---|
+| Android-Emulator (Pixel 10, x86_64) auf dem Entwickler-PC | ausstehend | |
+| Echtes Mittelklasse-Android | ausstehend | |
+| iPhone | ausstehend | |
 
 ## 4. PIN, Sperre und Sitzung (Phase 2)
 
@@ -70,6 +95,9 @@ Schlüssel ableiten, `fn` ausführen, danach alle Byte-Arrays mit Nullen übersc
 |---|---|---|
 | Screenshot-Schutz auf Seed-, Verify-, Import- und Reveal-Screens (Android `FLAG_SECURE`; iOS Aufnahme abdecken, Screenshot-Warnung) | 2 | offen |
 | Seed-Eingabefelder ohne Autokorrektur, Vorschläge, Autofill und Kontextmenü | 0/2 | Props gesetzt (`SEED_INPUT_PROPS`), Prüfung auf Geräten offen |
+| Verdeckte Seed-Wörter werden nicht gerendert (nur Platzhalter) | 0 | umgesetzt |
+| Backup/Gerätetransfer: `allowBackup=false` und Data-Extraction-Rules für den Secure Store (Android 12+) | 1 | umgesetzt (expo-secure-store-Plugin) |
+| Secure Store nur auf diesem Gerät und im entsperrten Zustand (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`) | 1 | umgesetzt |
 | Adressen kopieren erlaubt, Seed nie; Clipboard nach 60 s leeren, falls unverändert | 6/7 | offen |
 | Keine dynamisch nachgeladenen Skripte, kein `eval`, keine Remote-Assets | 0 | eingehalten (Fonts lokal) |
 | Produktions-Build ohne Dev-Menü und Debug-Logs; Bundle-Scan nach verbotenen Mustern in CI | 10 | offen |

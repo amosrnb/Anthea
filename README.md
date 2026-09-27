@@ -4,8 +4,9 @@ Non-custodial crypto wallet for iOS and Android (German UI, dark theme, 390×844
 Expo. The binding specification is [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md); security model and data flows are in
 [`docs/SECURITY.md`](docs/SECURITY.md) and [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
-**Status: Phase 0.** All screens are ported from the web prototype and run on mock data. There are no real keys and no
-network access yet; do not use this build with real funds.
+**Status: Phase 1.** All screens are ported from the web prototype and still run on mock data. The crypto core
+(BIP39, derivation, encrypted vault, `withSigner`) is implemented and tested but not yet wired to the UI (Phase 2).
+No network access yet; do not use this build with real funds.
 
 ## Getting started
 
@@ -40,7 +41,11 @@ index.ts              entry point
 src/
   App.tsx             device surface, dock, sheets, toast, platform back handling
   useWallet.tsx       all state and derived view values: the interface between logic and screens
-  data.ts, lib.ts     prototype mock data and helpers (replaced from Phase 1 on)
+  core/               pure crypto and format logic, no I/O (mnemonic, derive, vault, address, amounts)
+  platform/           device APIs: secure storage, native crypto
+  state/              keyring: vault storage, unlock, withSigner
+  dev/                development-build helpers (KDF benchmark in the dev menu)
+  data.ts, lib.ts     prototype mock data and helpers (replaced step by step)
   screens/            ported screens, grouped by flow
   ui/                 base components, icons, typography/theme helpers
   __tests__/          Jest + Testing Library

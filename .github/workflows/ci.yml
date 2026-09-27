@@ -34,7 +34,7 @@ jobs:
       - name: Format
         run: npm run format:check
       - name: Unit tests
-        run: npm test -- --ci
+        run: npm test -- --ci --coverage
       - name: Generate native projects (iOS + Android)
         run: npx expo prebuild --no-install --clean
       - name: Bundle (web)
