@@ -5,8 +5,10 @@ Crash-Reports. Trotzdem muss ein Wallet mit Blockchains und Datendiensten sprech
 Dienst, welche Daten er dabei zwangsläufig sieht. Grundlage sind `docs/BUILD_PLAN.md` (Abschnitte 4.3 und 4.4) und die
 Datenschutzangaben für App Store und Google Play (Phase 11).
 
-**Stand:** Phase 0. Die App arbeitet noch mit Mock-Daten und baut **keine** Verbindungen zu den unten genannten
-Diensten auf. Die Tabelle beschreibt den Zielzustand von v1 und wird mit jeder Phase geprüft.
+**Stand:** Phase 2. Die App arbeitet noch mit Mock-Daten. Einzige Verbindung: Beim **Import** einer Phrase fragt sie
+bei mempool.space (Bitcoin testnet4) ab, welche abgeleiteten Bitcoin-Adressen schon benutzt wurden (Gap-Limit 20).
+mempool.space sieht dabei die IP-Adresse und diese Adressen. Neu erstellte Wallets bauen keine Verbindung auf. Die
+Tabelle beschreibt den Zielzustand von v1 und wird mit jeder Phase geprüft.
 
 ## Grundsätze
 
@@ -40,7 +42,7 @@ Diensten auf. Die Tabelle beschreibt den Zielzustand von v1 und wird mit jeder P
 ## Was auf dem Gerät bleibt
 
 - Kamera (QR-Scan) wird ausschließlich lokal ausgewertet.
-- Zwischenablage: Adressen können kopiert werden und werden nach 60 s wieder entfernt, falls unverändert. Der Seed kann
+- Zwischenablage: Anthea liest sie nur, wenn der Nutzer „Einfügen“ antippt. Adressen können kopiert werden und werden nach 60 s wieder entfernt, falls unverändert. Der Seed kann
   nie kopiert werden.
 - Einstellungen, Watchlist, lokaler Aktivitäts- und Empfängerverlauf sowie Preis-Caches liegen lokal (MMKV, vom Backup
   ausgeschlossen).
