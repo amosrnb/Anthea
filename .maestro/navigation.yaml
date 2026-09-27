@@ -32,4 +32,6 @@ tags:
     file: subflows/enter-pin.yaml
     env:
       PIN: '123456'
-- assertVisible: 'GESAMTWERT'
+- extendedWaitUntil:
+    visible: 'GESAMTWERT'
+    timeout: 20000

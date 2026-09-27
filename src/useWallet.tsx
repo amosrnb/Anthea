@@ -1,35 +1,43 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
+import type { Network } from './core/address';
+import { wipe } from './core/bytes';
+import { scanBitcoin } from './core/btcScan';
+import type { AccountPublic } from './core/derive';
+import { checkMnemonic, generateEntropy, splitWords, suggestWords, toMnemonic } from './core/mnemonic';
+import { formatWait } from './core/pinPolicy';
+import { createVerifyChallenge, reshuffle, type VerifyRow } from './core/verify';
+import { AUTO_LOCK_OPTIONS, type AutoLockMinutes } from './platform/settings';
+import type { PinCheck } from './state/session';
+import type { WalletDeps } from './state/appServices';
 import {
   ACC,
   ADDR,
   ASSETS,
   COINS,
   FEES,
-  FRESH,
   INITIAL_ACTIVITY,
   IND,
   INK,
   MUT,
   NEG,
-  POISON,
   POS,
   RATES,
   RCV,
   RECENT,
   RPCS,
-  SEED,
   SWAPPABLE,
-  VERIFY,
   WARN,
-  WORDS,
   type ActivityItem,
   type Asset,
   type Currency,
+  type Family,
 } from './data';
-import { chart, famOf, nf, pc, qrCells, short, shuffled, validateAddress } from './lib';
+import { chart, famOf, nf, pc, qrMatrix, short, validateAddress } from './lib';
 import { Icon, StarIcon } from './ui/icons';
 
 export type Screen =
+  | 'boot'
   | 'welcome'
   | 'warn'
   | 'seed'
@@ -53,15 +61,12 @@ export type Screen =
   | 'rpc'
   | 'reveal';
 export type Tab = 'home' | 'markets' | 'activity' | 'settings';
-type PinMode = 'set' | 'confirm' | 'unlock' | 'reveal';
+type PinMode = 'set' | 'confirm' | 'unlock' | 'reveal' | 'changeOld' | 'changeNew' | 'changeConfirm';
 type HRange = '24H' | '7D' | '30D' | '1J';
 type CRange = '1H' | '24H' | '7D' | '30D' | '1J';
 
-export interface WalletProps {
-  startScreen: 'welcome' | 'lock' | 'home';
-  testnet: boolean;
-  privacyMode: boolean;
-}
+/** Testnet until mainnet is enabled in Phase 11 (BUILD_PLAN 2.8). */
+export const NETWORK: Network = 'testnet';
 
 interface StatusCfg {
   title: string;
@@ -85,14 +90,20 @@ interface State {
   checks: boolean[];
   seedShown: boolean;
   picks: Record<number, string>;
-  /** Display order of the three options per verification row, shuffled each time the verify step opens. */
-  verifyOpts: string[][];
+  /** Backup check: 3 random positions with options, reshuffled each time the verify step opens. */
+  verify: VerifyRow[];
   importText: string;
-  pin: string;
-  pinFirst: string;
+  /** Number of digits typed; the digits themselves live in a ref only until the KDF runs (BUILD_PLAN 8). */
+  pinLen: number;
   pinError: string;
-  autoLock: number;
-  cPin: string;
+  /** A PIN check (scrypt) is running. */
+  busy: boolean;
+  /** Epoch ms until PIN entry is blocked after too many wrong PINs (BUILD_PLAN 5.3). */
+  lockedUntil: number;
+  /** Public data of the unlocked wallet; null while locked or before onboarding. */
+  accounts: AccountPublic | null;
+  autoLock: AutoLockMinutes;
+  cPinLen: number;
   cPinError: string;
   currency: Currency;
   netFilter: string;
@@ -133,22 +144,24 @@ export interface Row {
   divider: string;
 }
 
-function initialState(start: WalletProps['startScreen']): State {
+function initialState(autoLock: AutoLockMinutes): State {
   return {
-    screen: start === 'lock' ? 'pin' : start,
-    pinMode: start === 'lock' ? 'unlock' : 'set',
+    screen: 'boot',
+    pinMode: 'unlock',
     flow: 'create',
     tab: 'home',
     checks: [false, false, false],
     seedShown: false,
     picks: {},
-    verifyOpts: VERIFY.map((v) => v.opts),
+    verify: [],
     importText: '',
-    pin: '',
-    pinFirst: '',
+    pinLen: 0,
     pinError: '',
-    autoLock: 5,
-    cPin: '',
+    busy: false,
+    lockedUntil: 0,
+    accounts: null,
+    autoLock,
+    cPinLen: 0,
     cPinError: '',
     currency: 'EUR',
     netFilter: 'Alle',
@@ -184,8 +197,14 @@ function initialState(start: WalletProps['startScreen']): State {
 const TABS: Tab[] = ['home', 'markets', 'activity', 'settings'];
 const KEYPAD = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
 
-export function useWallet(P: WalletProps) {
-  const [S, setRaw] = useState<State>(() => initialState(P.startScreen));
+/** Screens where the phrase is on screen or typed: screenshot protection (BUILD_PLAN 5.4). */
+export const PHRASE_SCREENS: readonly Screen[] = ['seed', 'verify', 'import', 'reveal'];
+
+const wrongPinText = (left: number) => 'Falsche PIN. Noch ' + left + (left === 1 ? ' Versuch.' : ' Versuche.');
+
+export function useWallet(deps: WalletDeps) {
+  const { session, settings, now } = deps;
+  const [S, setRaw] = useState<State>(() => initialState(settings.autoLockMinutes()));
   const latest = useRef(S);
   useLayoutEffect(() => {
     latest.current = S;
@@ -198,6 +217,40 @@ export function useWallet(P: WalletProps) {
     timers.current[key] = setTimeout(fn, ms);
   };
   const confirmRun = useRef<(() => void) | null>(null);
+
+  // Secrets are kept out of React state: PIN digits only until the KDF, phrase entropy and words only during
+  // onboarding or while "Phrase anzeigen" is open (BUILD_PLAN 5.3, 8).
+  const pinBuf = useRef('');
+  const cPinBuf = useRef('');
+  const firstPin = useRef('');
+  const oldPin = useRef('');
+  const entropy = useRef<Uint8Array | null>(null);
+  // Words must be rendered, so they live in their own state (never in the settings or persisted state).
+  const [phrase, setPhrase] = useState<string[]>([]);
+  const [revealed, setRevealed] = useState<string[]>([]);
+  const lastActive = useRef(now());
+
+  const clearSecrets = () => {
+    pinBuf.current = cPinBuf.current = firstPin.current = oldPin.current = '';
+    wipe(entropy.current);
+    entropy.current = null;
+    setPhrase([]);
+    setRevealed([]);
+  };
+
+  // Start: wallet present → PIN screen (with a running wait from earlier failures), otherwise onboarding.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const has = await session.hasWallet();
+      const wait = has ? await session.lockedFor() : 0;
+      if (!cancelled) setState({ screen: has ? 'pin' : 'welcome', pinMode: 'unlock', lockedUntil: wait ? now() + wait : 0 });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once at startup
+  }, []);
 
   // Quote refresh countdown while the swap screen is open.
   useEffect(() => {
@@ -216,24 +269,92 @@ export function useWallet(P: WalletProps) {
     later('toast', 2400, () => setState({ toast: null }));
   };
 
-  /** Signing requires the PIN. Without one set (onboarding skipped via ?start=), any 6 digits are accepted. */
-  const runConfirm = (p: string) => {
-    const s = latest.current;
-    if (!s.confirmOpen) return;
-    if (s.pinFirst && p !== s.pinFirst) return setState({ cPin: '', cPinError: 'Falsche PIN.' });
-    setState({ confirmOpen: false, cPin: '', cPinError: '' });
-    confirmRun.current?.();
+  /** Locks the wallet: drops public data and every transient secret, shows the PIN screen. */
+  const lock = () => {
+    clearSecrets();
+    Object.values(timers.current).forEach(clearTimeout);
+    setState({
+      screen: 'pin',
+      pinMode: 'unlock',
+      pinLen: 0,
+      pinError: '',
+      busy: false,
+      accounts: null,
+      confirmOpen: false,
+      resetOpen: false,
+      cPinLen: 0,
+      cPinError: '',
+      toast: null,
+    });
+  };
+  const isUnlocked = (s: State) => s.accounts !== null && !(s.screen === 'pin' && s.pinMode === 'unlock');
+
+  // Auto-lock after inactivity (BUILD_PLAN 5.3). Time in the background counts: timers pause there, so the check
+  // also runs when the app becomes active again.
+  useEffect(() => {
+    const check = () => {
+      const s = latest.current;
+      if (isUnlocked(s) && now() - lastActive.current >= s.autoLock * 60_000) lock();
+    };
+    const tick = setInterval(check, 5000);
+    const sub = AppState.addEventListener('change', (state) => state === 'active' && check());
+    return () => {
+      clearInterval(tick);
+      sub.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lock and isUnlocked only read refs and setters
+  }, []);
+
+  // Countdown while PIN entry is blocked.
+  useEffect(() => {
+    if (!S.lockedUntil) return;
+    const t = setInterval(() => {
+      if (now() >= latest.current.lockedUntil) setState({ lockedUntil: 0, pinError: '', cPinError: '' });
+      else setState({});
+    }, 1000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restarts only when a wait starts or ends
+  }, [S.lockedUntil]);
+
+  const lockedMs = Math.max(0, S.lockedUntil - now());
+  const lockText = lockedMs > 0 ? 'Zu viele Versuche. Erneut möglich in ' + formatWait(lockedMs) : '';
+
+  /** Maps a failed guarded PIN check to the error text and the wait (BUILD_PLAN 5.3 texts). */
+  const failure = (r: Exclude<PinCheck<unknown>, { ok: true }>) => {
+    if (r.lockedFor > 0) return { lockedUntil: now() + r.lockedFor, text: '' };
+    return { lockedUntil: 0, text: r.reason === 'wrong-pin' ? wrongPinText(r.left) : '' };
+  };
+
+  /** Signing requires the PIN; checked against the vault with the attempt limit. */
+  const runConfirm = async (p: string) => {
+    if (!latest.current.confirmOpen) return;
+    setState({ busy: true });
+    const r = await session.verifyPin(p);
+    cPinBuf.current = '';
+    if (r.ok) {
+      setState({ busy: false, confirmOpen: false, cPinLen: 0, cPinError: '' });
+      confirmRun.current?.();
+      return;
+    }
+    const f = failure(r);
+    setState({ busy: false, cPinLen: 0, cPinError: f.text, lockedUntil: f.lockedUntil });
   };
   const openConfirm = (run: () => void) => {
     confirmRun.current = run;
-    setState({ confirmOpen: true, cPin: '', cPinError: '' });
+    cPinBuf.current = '';
+    setState({ confirmOpen: true, cPinLen: 0, cPinError: '' });
   };
   const confirmPress = (k: string) => {
-    if (k === 'del') return setState({ cPin: S.cPin.slice(0, -1), cPinError: '' });
-    if (!k || S.cPin.length >= 6) return;
-    const p = S.cPin + k;
-    setState({ cPin: p, cPinError: '' });
-    if (p.length === 6) later('cpin', 200, () => runConfirm(p));
+    if (S.busy || lockedMs > 0) return;
+    if (k === 'del') {
+      cPinBuf.current = cPinBuf.current.slice(0, -1);
+      return setState({ cPinLen: cPinBuf.current.length, cPinError: '' });
+    }
+    if (!k || cPinBuf.current.length >= 6) return;
+    cPinBuf.current += k;
+    const p = cPinBuf.current;
+    setState({ cPinLen: p.length, cPinError: '' });
+    if (p.length === 6) later('cpin', 150, () => void runConfirm(p));
   };
 
   const startStatus = (cfg: StatusCfg) => {
@@ -259,26 +380,89 @@ export function useWallet(P: WalletProps) {
     );
   };
 
-  const pinDone = (p: string) => {
-    const s = latest.current;
-    if (s.pinMode === 'set') return setState({ pinFirst: p, pin: '', pinMode: 'confirm' });
-    if (s.pinMode === 'confirm') {
-      if (p === s.pinFirst) {
-        setState({ screen: 'home', tab: 'home', pin: '' });
-        return flash(s.flow === 'import' ? 'Konten abgeleitet · Bitcoin-Scan abgeschlossen' : 'Wallet bereit');
-      }
-      return setState({ pinMode: 'set', pin: '', pinFirst: '', pinError: 'PINs stimmen nicht überein. Bitte neu festlegen.' });
+  /** New wallet or import: writes the vault, derives addresses, scans Bitcoin on import (BUILD_PLAN Phase 2.3). */
+  const finishOnboarding = async (pin: string) => {
+    const e = entropy.current;
+    if (!e) return setState({ busy: false, screen: 'welcome' });
+    let accounts: AccountPublic;
+    try {
+      accounts = await session.create(e, pin, NETWORK);
+    } catch {
+      setState({ busy: false, pinMode: 'set', pinLen: 0, pinError: 'Speichern fehlgeschlagen. Bitte erneut versuchen.' });
+      return;
     }
-    if (s.pinFirst && p !== s.pinFirst) return setState({ pin: '', pinError: 'Falsche PIN. Noch 4 Versuche.' });
-    if (s.pinMode === 'unlock') return setState({ screen: 'home', tab: 'home', pin: '' });
-    if (s.pinMode === 'reveal') return setState({ screen: 'reveal', pin: '' });
+    const imported = latest.current.flow === 'import';
+    clearSecrets();
+    let toast = 'Wallet bereit';
+    if (imported) {
+      try {
+        accounts = await scanBitcoin(accounts, (a) => deps.isBtcAddressUsed(a, NETWORK));
+        await session.saveAccounts(accounts);
+        toast = 'Konten abgeleitet · Bitcoin-Scan abgeschlossen';
+      } catch {
+        toast = 'Konten abgeleitet · Bitcoin-Scan fehlgeschlagen';
+      }
+    }
+    lastActive.current = now();
+    setState({ busy: false, screen: 'home', tab: 'home', accounts, pinLen: 0, pinError: '' });
+    flash(toast);
+  };
+
+  const pinDone = async (p: string) => {
+    const s = latest.current;
+    pinBuf.current = '';
+    const next = (patch: Partial<State>) => setState({ pinLen: 0, busy: false, ...patch });
+    if (s.pinMode === 'set' || s.pinMode === 'changeNew') {
+      firstPin.current = p;
+      return next({ pinMode: s.pinMode === 'set' ? 'confirm' : 'changeConfirm', pinError: '' });
+    }
+    if (s.pinMode === 'confirm' || s.pinMode === 'changeConfirm') {
+      const match = p === firstPin.current;
+      firstPin.current = '';
+      const retry = s.pinMode === 'confirm' ? 'set' : 'changeNew';
+      if (!match) return next({ pinMode: retry, pinError: 'PINs stimmen nicht überein. Bitte neu festlegen.' });
+      setState({ busy: true });
+      if (s.pinMode === 'confirm') return finishOnboarding(p);
+      const r = await session.changePin(oldPin.current, p);
+      oldPin.current = '';
+      if (!r.ok) return next({ pinMode: 'changeOld', ...failureState(r) });
+      next({ screen: 'settings', pinMode: 'unlock', pinError: '' });
+      return flash('PIN geändert');
+    }
+    setState({ busy: true });
+    if (s.pinMode === 'unlock') {
+      const r = await session.unlock(p);
+      if (!r.ok) return next(failureState(r));
+      lastActive.current = now();
+      return next({ screen: 'home', tab: 'home', accounts: r.value, pinError: '' });
+    }
+    if (s.pinMode === 'reveal') {
+      const r = await session.revealPhrase(p);
+      if (!r.ok) return next(failureState(r));
+      setRevealed(r.value);
+      return next({ screen: 'reveal', pinMode: 'unlock', pinError: '' });
+    }
+    // changeOld
+    const r = await session.verifyPin(p);
+    if (!r.ok) return next(failureState(r));
+    oldPin.current = p;
+    next({ pinMode: 'changeNew', pinError: '' });
+  };
+  const failureState = (r: Exclude<PinCheck<unknown>, { ok: true }>): Partial<State> => {
+    const f = failure(r);
+    return { pinError: f.text, lockedUntil: f.lockedUntil };
   };
   const pinPress = (k: string) => {
-    if (k === 'del') return setState({ pin: S.pin.slice(0, -1), pinError: '' });
-    if (!k || S.pin.length >= 6) return;
-    const p = S.pin + k;
-    setState({ pin: p, pinError: '' });
-    if (p.length === 6) later('pin', 200, () => pinDone(p));
+    if (S.busy || lockedMs > 0) return;
+    if (k === 'del') {
+      pinBuf.current = pinBuf.current.slice(0, -1);
+      return setState({ pinLen: pinBuf.current.length, pinError: '' });
+    }
+    if (!k || pinBuf.current.length >= 6) return;
+    pinBuf.current += k;
+    const p = pinBuf.current;
+    setState({ pinLen: p.length, pinError: '' });
+    if (p.length === 6) later('pin', 150, () => void pinDone(p));
   };
 
   // ---- derived view values ----
@@ -315,15 +499,18 @@ export function useWallet(P: WalletProps) {
   };
   const back = () => {
     if (scr === 'pin') {
-      const reveal = S.pinMode === 'reveal';
+      pinBuf.current = firstPin.current = oldPin.current = '';
+      clearTimeout(timers.current.pin);
+      const inSettings = S.pinMode === 'reveal' || S.pinMode.startsWith('change');
       return setState({
-        screen: reveal ? 'settings' : S.flow === 'import' ? 'import' : 'verify',
-        pin: '',
+        screen: inSettings ? 'settings' : S.flow === 'import' ? 'import' : 'verify',
+        pinLen: 0,
         pinError: '',
-        pinMode: reveal ? 'unlock' : 'set',
-        pinFirst: reveal ? S.pinFirst : '',
+        pinMode: inSettings ? 'unlock' : 'set',
       });
     }
+    if (scr === 'reveal') setRevealed([]);
+    if (scr === 'warn' || scr === 'import') clearSecrets();
     setState({ screen: backMap[scr] || 'home', slipOpen: false });
   };
   /**
@@ -333,7 +520,8 @@ export function useWallet(P: WalletProps) {
   const systemBack = (): boolean => {
     if (S.confirmOpen) {
       clearTimeout(timers.current.cpin);
-      setState({ confirmOpen: false, cPin: '', cPinError: '' });
+      cPinBuf.current = '';
+      setState({ confirmOpen: false, cPinLen: 0, cPinError: '' });
       return true;
     }
     if (S.resetOpen) {
@@ -344,7 +532,7 @@ export function useWallet(P: WalletProps) {
       setState({ slipOpen: false });
       return true;
     }
-    if (scr === 'welcome' || scr === 'home' || (scr === 'pin' && S.pinMode === 'unlock')) return false;
+    if (scr === 'boot' || scr === 'welcome' || scr === 'home' || (scr === 'pin' && S.pinMode === 'unlock')) return false;
     if (scr === 'markets' || scr === 'activity' || scr === 'settings' || scr === 'status') {
       setState({ screen: 'home', tab: 'home' });
       return true;
@@ -352,7 +540,7 @@ export function useWallet(P: WalletProps) {
     back();
     return true;
   };
-  const lockNow = () => setState({ screen: 'pin', pinMode: 'unlock', pin: '', pinError: '' });
+  const lockNow = lock;
   const startSend = (id?: string) => setState({ screen: id ? 'sendTo' : 'sendAsset', sAsset: id || S.sAsset, sTo: '', sAmt: '', sFiat: false, sFee: 1 });
   const startRecv = (sym: string) => setState({ screen: 'receive', rcvAsset: sym, rcvNet: RCV[sym]?.[0] ?? 'Ethereum' });
   const startSwap = (id?: string) => {
@@ -382,12 +570,12 @@ export function useWallet(P: WalletProps) {
       }),
   }));
   const warnOk = S.checks.every(Boolean);
-  const seedWords = SEED.map((w, i) => ({ n: i + 1, w }));
-  const verifyRows = VERIFY.map((v, row) => ({
+  const seedWords = phrase.map((w, i) => ({ n: i + 1, w }));
+  const verifyRows = S.verify.map((v) => ({
     pos: v.pos,
-    opts: (S.verifyOpts[row] ?? v.opts).map((w) => {
+    opts: v.opts.map((w) => {
       const picked = S.picks[v.pos] === w,
-        right = SEED[v.pos - 1] === w;
+        right = phrase[v.pos - 1] === w;
       return {
         w,
         bg: picked ? (right ? IND : 'rgba(255,143,128,.18)') : '#141418',
@@ -396,32 +584,47 @@ export function useWallet(P: WalletProps) {
       };
     }),
   }));
-  const verifyOk = VERIFY.every((v) => S.picks[v.pos] === SEED[v.pos - 1]);
+  const verifyOk = S.verify.length > 0 && S.verify.every((v) => S.picks[v.pos] === phrase[v.pos - 1]);
 
-  const iw = S.importText.normalize('NFKD').toLowerCase().trim().split(/\s+/).filter(Boolean);
-  const endsSpace = /\s$/.test(S.importText);
-  const partial = !endsSpace && iw.length ? iw[iw.length - 1]! : '';
-  const complete = endsSpace ? iw : iw.slice(0, -1);
-  const bad = complete.find((w) => !WORDS.includes(w)) || (iw.length === 12 && !WORDS.includes(iw[11]!) ? iw[11]! : null);
-  const importValid = (iw.length === 12 || iw.length === 24) && !bad && iw.every((w) => WORDS.includes(w));
-  const importMsg = bad ? '„' + bad + '“ ist kein gültiges BIP39-Wort' : importValid ? 'Prüfsumme gültig' : iw.length + ' / 12 Wörter';
-  const importSugg = partial
-    ? WORDS.filter((w, i, arr) => arr.indexOf(w) === i && w.startsWith(partial) && w !== partial)
-        .slice(0, 5)
-        .map((w) => ({
-          w,
-          onClick: () => setState((s) => ({ importText: s.importText.replace(/\S+$/, w) + ' ' })),
-        }))
-    : [];
+  // Import: real BIP39 validation with the design's texts (BUILD_PLAN Phase 2.2).
+  const check = checkMnemonic(S.importText);
+  const typed = splitWords(S.importText);
+  const importValid = check.kind === 'ok';
+  const importMsg =
+    check.kind === 'invalid-word'
+      ? '„' + check.word + '“ ist kein gültiges BIP39-Wort'
+      : check.kind === 'bad-checksum'
+        ? 'Prüfsumme ungültig. Prüfe Reihenfolge und Schreibweise.'
+        : check.kind === 'ok'
+          ? 'Prüfsumme gültig'
+          : check.kind === 'bad-length'
+            ? typed.length + ' Wörter · höchstens 24'
+            : typed.length + (typed.length > 12 ? ' / 24 Wörter' : ' / 12 Wörter');
+  const partial = !/\s$/.test(S.importText) && typed.length ? typed[typed.length - 1]! : '';
+  const importSugg = suggestWords(partial).map((w) => ({
+    w,
+    onClick: () => setState((s) => ({ importText: s.importText.replace(/\S+$/, w) + ' ' })),
+  }));
 
-  const pinTitles: Record<PinMode, string> = { set: 'PIN festlegen', confirm: 'PIN bestätigen', unlock: 'Anthea ist gesperrt', reveal: 'PIN eingeben' };
+  const pinTitles: Record<PinMode, string> = {
+    set: 'PIN festlegen',
+    confirm: 'PIN bestätigen',
+    unlock: 'Anthea ist gesperrt',
+    reveal: 'PIN eingeben',
+    changeOld: 'PIN ändern',
+    changeNew: 'Neue PIN festlegen',
+    changeConfirm: 'Neue PIN bestätigen',
+  };
   const pinSubs: Record<PinMode, string> = {
     set: '6 Ziffern. Sie schützt dein Wallet auf diesem Gerät.',
     confirm: 'Gib die PIN noch einmal ein.',
     unlock: 'PIN eingeben.',
     reveal: 'Für die Phrase ist die PIN nötig.',
+    changeOld: 'Gib zuerst deine aktuelle PIN ein.',
+    changeNew: '6 Ziffern. Sie schützt dein Wallet auf diesem Gerät.',
+    changeConfirm: 'Gib die neue PIN noch einmal ein.',
   };
-  const pinDots = [0, 1, 2, 3, 4, 5].map((i) => (i < S.pin.length ? IND : '#2A2A32'));
+  const pinDots = [0, 1, 2, 3, 4, 5].map((i) => (i < S.pinLen || S.busy ? IND : '#2A2A32'));
   const keyFace = (k: string) => ({
     label: k === 'del' ? '' : k,
     icon: (k === 'del' ? <Icon name="del" color={INK} size={24} weight={1.9} /> : null) as ReactNode,
@@ -490,8 +693,11 @@ export function useWallet(P: WalletProps) {
   // Receive
   const rNets = RCV[S.rcvAsset] || ['Ethereum'];
   const rNet = rNets.includes(S.rcvNet) ? S.rcvNet : rNets[0]!;
-  const rFam = famOf(rNet),
-    rAddr = ADDR[rFam];
+  const rFam = famOf(rNet);
+  // The wallet's own derived addresses (Bitcoin: first unused receive address). Mock only in the web preview.
+  const own = (fam: Family) => (S.accounts ? (fam === 'btc' ? S.accounts.btc.receive[S.accounts.btc.receive.length - 1]! : S.accounts[fam]) : ADDR[fam]);
+  const rAddr = own(rFam);
+  const rQr = qrMatrix(rAddr);
 
   // Send
   const sA = A(S.sAsset) || ASSETS[2]!;
@@ -538,8 +744,8 @@ export function useWallet(P: WalletProps) {
   if (tokenAmt > sA.bal * 0.5 && !over) revWarns.push({ text: 'Du sendest mehr als 50 % deines Guthabens.', ink: msgStyle.info[0], bg: msgStyle.info[1] });
   const tokenFiat = canFiat ? tokenAmt * sA.price! : null;
   const revRows = rows([
-    { k: 'Netzwerk', v: sA.net + (P.testnet ? ' (Testnetz)' : '') },
-    { k: 'Von', v: short(ADDR[sFam]) },
+    { k: 'Netzwerk', v: sA.net + (NETWORK === 'testnet' ? ' (Testnetz)' : '') },
+    { k: 'Von', v: short(own(sFam)) },
     { k: 'An', v: S.sTo.trim() },
     { k: 'Netzwerkgebühr', v: fiat(fee.eur) + ' · ' + fee.l },
     { k: 'Gesamt', v: canFiat ? fiat(tokenFiat! + fee.eur) : nf(tokenAmt, sA.dec) + ' ' + sA.sym + ' + ' + fiat(fee.eur) },
@@ -641,37 +847,56 @@ export function useWallet(P: WalletProps) {
     back,
     systemBack,
     lockNow,
-    testnet: P.testnet,
-    privacy: P.privacyMode,
+    testnet: NETWORK === 'testnet',
+    /** Any touch counts as activity for the auto-lock. */
+    touch: () => {
+      lastActive.current = now();
+    },
+    isPhraseScreen: PHRASE_SCREENS.includes(scr),
+    screenshotWarning: () => flash('Screenshot erkannt. Die Phrase gehört nur auf Papier.'),
     toast: S.toast,
 
     // onboarding
-    startCreate: () => setState({ screen: 'warn', flow: 'create', checks: [false, false, false], seedShown: false, picks: {} }),
-    startImport: () => setState({ screen: 'import', flow: 'import', importText: '' }),
+    startCreate: () => {
+      clearSecrets();
+      entropy.current = generateEntropy();
+      const words = toMnemonic(entropy.current).split(' ');
+      setPhrase(words);
+      setState({ screen: 'warn', flow: 'create', checks: [false, false, false], seedShown: false, picks: {}, verify: createVerifyChallenge(words) });
+    },
+    startImport: () => {
+      clearSecrets();
+      setState({ screen: 'import', flow: 'import', importText: '' });
+    },
     warnRows,
     warnOk,
     warnNext: () => warnOk && setState({ screen: 'seed' }),
     seedWords,
     seedShown: S.seedShown,
     revealSeed: set({ seedShown: true }),
-    seedNext: () => S.seedShown && setState({ screen: 'verify', picks: {}, verifyOpts: VERIFY.map((v) => shuffled(v.opts)) }),
+    seedNext: () => S.seedShown && setState({ screen: 'verify', picks: {}, verify: reshuffle(S.verify) }),
     verifyRows,
     verifyOk,
-    verifyNext: () => verifyOk && setState({ screen: 'pin', pinMode: 'set', pin: '', pinFirst: '', pinError: '' }),
+    verifyNext: () => verifyOk && setState({ screen: 'pin', pinMode: 'set', pinLen: 0, pinError: '' }),
     importText: S.importText,
     onImport: (text: string) => setState({ importText: text }),
     importMsg,
-    importInk: bad ? NEG : importValid ? POS : MUT,
+    importInk: check.kind === 'invalid-word' || check.kind === 'bad-checksum' || check.kind === 'bad-length' ? NEG : importValid ? POS : MUT,
     importSugg,
     importValid,
-    importDemo: set({ importText: SEED.join(' ') }),
-    importNext: () => importValid && setState({ screen: 'pin', pinMode: 'set', pin: '', pinFirst: '', pinError: '' }),
+    importNext: () => {
+      if (check.kind !== 'ok') return;
+      wipe(entropy.current);
+      entropy.current = check.entropy;
+      setState({ screen: 'pin', pinMode: 'set', pinLen: 0, pinError: '', importText: '' });
+    },
     pinTitle: pinTitles[S.pinMode],
     pinSub: pinSubs[S.pinMode],
     pinDots,
     pinKeys,
-    pinError: S.pinError,
-    pinCanBack: S.pinMode !== 'unlock',
+    pinError: lockText || S.pinError,
+    pinCanBack: S.pinMode !== 'unlock' && !S.busy,
+    pinLocked: lockedMs > 0,
 
     // home
     total: fiat(totalEur),
@@ -722,7 +947,7 @@ export function useWallet(P: WalletProps) {
     // receive
     rcvAssets: Object.keys(RCV).map((s) => ({ label: s, ...chip(S.rcvAsset === s), onClick: set({ rcvAsset: s, rcvNet: RCV[s]![0] }) })),
     rcvNets: rNets.map((n) => ({ label: n, bg: n === rNet ? 'rgba(108,92,231,.18)' : '#141418', ink: n === rNet ? ACC : MUT, onClick: set({ rcvNet: n }) })),
-    qr: qrCells(rAddr),
+    qr: rQr,
     rcvAddr: rAddr.match(/.{1,4}/g)!.join(' '),
     rcvNote: rFam === 'btc' ? 'Native SegWit · nach Nutzung neue Adresse' : rFam === 'evm' ? 'Gleiche Adresse auf allen EVM-Netzen' : 'Solana-Adresse',
     rcvWarn: 'Sende nur ' + S.rcvAsset + ' über ' + rNet + ' an diese Adresse. Andere Netzwerke können zum Verlust führen.',
@@ -735,11 +960,11 @@ export function useWallet(P: WalletProps) {
     sTo: S.sTo,
     onTo: (text: string) => setState({ sTo: text.replace(/\s/g, '') }),
     toPlaceholder: sFam === 'evm' ? '0x… Adresse' : sFam === 'sol' ? 'Solana-Adresse' : 'bc1… Adresse',
-    pasteTo: set({ sTo: POISON[sFam] }),
-    scanTo: () => {
-      setState({ sTo: FRESH[sFam] });
-      flash('QR-Code erkannt');
+    pasteTo: async () => {
+      const text = await deps.readClipboard().catch(() => '');
+      setState({ sTo: text.replace(/\s/g, '') });
     },
+    scanTo: () => flash('QR-Scan folgt in einer späteren Version'),
     toMsg,
     recents: [{ short: short(RECENT[sFam]), note: 'Zuletzt am 12. Sep', onClick: set({ sTo: RECENT[sFam] }) }],
     toValid,
@@ -847,30 +1072,46 @@ export function useWallet(P: WalletProps) {
     rpcs: RPCS.map(([net, url], i) => ({ net, url, fb: i === 7 ? '+1 Fallback' : '+2 Fallbacks', divider: div(i) })),
     addRpc: () => flash('Nur HTTPS-Endpunkte werden akzeptiert'),
     tokensInfo: () => flash('Token per Vertragsadresse hinzufügen'),
-    changePin: () => flash('Alte PIN prüfen, dann neue festlegen'),
+    changePin: () => {
+      pinBuf.current = firstPin.current = oldPin.current = '';
+      setState({ screen: 'pin', pinMode: 'changeOld', pinLen: 0, pinError: '' });
+    },
     autoLockLabel: S.autoLock + ' min',
     cycleLock: () => {
-      const o = [1, 5, 15];
-      setState({ autoLock: o[(o.indexOf(S.autoLock) + 1) % o.length]! });
+      const next = AUTO_LOCK_OPTIONS[(AUTO_LOCK_OPTIONS.indexOf(S.autoLock) + 1) % AUTO_LOCK_OPTIONS.length]!;
+      settings.setAutoLockMinutes(next);
+      setState({ autoLock: next });
     },
-    revealPhrase: () => setState({ screen: 'pin', pinMode: 'reveal', pin: '', pinError: '' }),
+    revealPhrase: () => setState({ screen: 'pin', pinMode: 'reveal', pinLen: 0, pinError: '' }),
+    revealWords: revealed.map((w, i) => ({ n: i + 1, w })),
+    closeReveal: () => {
+      setRevealed([]);
+      setState({ screen: 'settings' });
+    },
     privacyInfo: () => flash('Keine Analytics, kein Tracking, keine Crash-Reports'),
     resetOpen: S.resetOpen,
     openReset: set({ resetOpen: true, resetChk: false }),
     closeReset: set({ resetOpen: false }),
     resetChk: S.resetChk,
     toggleResetChk: set({ resetChk: !S.resetChk }),
-    doReset: () =>
-      S.resetChk && setState({ resetOpen: false, screen: 'welcome', pinFirst: '', pinMode: 'set', checks: [false, false, false], seedShown: false, picks: {} }),
+    doReset: async () => {
+      if (!S.resetChk) return;
+      // Vault, device secret, PIN counter, public data and settings (BUILD_PLAN 5.3).
+      await session.reset();
+      settings.clear();
+      clearSecrets();
+      setState({ ...initialState(settings.autoLockMinutes()), screen: 'welcome', pinMode: 'set' });
+    },
 
     // overlays / chrome
     confirmOpen: S.confirmOpen,
-    confirmDots: [0, 1, 2, 3, 4, 5].map((i) => (i < S.cPin.length ? IND : '#2A2A32')),
+    confirmDots: [0, 1, 2, 3, 4, 5].map((i) => (i < S.cPinLen || (S.busy && S.confirmOpen) ? IND : '#2A2A32')),
     confirmKeys: KEYPAD.map((k) => ({ ...keyFace(k), onClick: () => confirmPress(k) })),
-    confirmError: S.cPinError,
+    confirmError: lockText || S.cPinError,
     closeConfirm: () => {
       clearTimeout(timers.current.cpin);
-      setState({ confirmOpen: false, cPin: '', cPinError: '' });
+      cPinBuf.current = '';
+      setState({ confirmOpen: false, cPinLen: 0, cPinError: '' });
     },
     showDock: (TABS as Screen[]).includes(scr),
     navLeft: nav.slice(0, 2),

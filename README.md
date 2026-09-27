@@ -4,9 +4,10 @@ Non-custodial crypto wallet for iOS and Android (German UI, dark theme, 390×844
 Expo. The binding specification is [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md); security model and data flows are in
 [`docs/SECURITY.md`](docs/SECURITY.md) and [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
-**Status: Phase 1.** All screens are ported from the web prototype and still run on mock data. The crypto core
-(BIP39, derivation, encrypted vault, `withSigner`) is implemented and tested but not yet wired to the UI (Phase 2).
-No network access yet; do not use this build with real funds.
+**Status: Phase 2.** Onboarding, PIN and lock run on the real crypto core (random phrase, encrypted vault, attempt
+limit, auto-lock, reveal phrase, change PIN, reset). The receive address and QR code are real (testnets). Balances,
+prices, activity and sending are still mock data; the only network access is the Bitcoin address scan on import
+(mempool.space testnet4). Do not use this build with real funds.
 
 ## Getting started
 

@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import Svg, { Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { ACC, IND } from '../data';
 import {
   BigBtn,
@@ -44,12 +44,15 @@ const TwoLineTitle = ({ title, sub }: { title: string; sub: string }) => (
   </View>
 );
 
-/** QR matrix drawn as SVG cells inside the white 220 pt card (29 × 29 modules). */
-function QrMatrix({ cells }: { cells: string[] }) {
-  const n = Math.round(Math.sqrt(cells.length));
+/** QR code drawn as one SVG path inside the white 220 pt card (the card's padding is the quiet zone). */
+function QrMatrix({ size, cells }: { size: number; cells: boolean[] }) {
+  let d = '';
+  cells.forEach((dark, i) => {
+    if (dark) d += `M${i % size} ${Math.floor(i / size)}h1v1h-1z`;
+  });
   return (
-    <Svg width="100%" height="100%" viewBox={`0 0 ${n} ${n}`} accessibilityLabel="QR-Code der Adresse">
-      {cells.map((c, i) => (c === '#000000' ? <Rect key={i} x={i % n} y={Math.floor(i / n)} width={1.02} height={1.02} fill="#000000" /> : null))}
+    <Svg width="100%" height="100%" viewBox={`0 0 ${size} ${size}`} accessibilityLabel="QR-Code der Adresse">
+      <Path d={d} fill="#000000" />
     </Svg>
   );
 }
@@ -73,10 +76,12 @@ export function Receive({ w }: { w: Wallet }) {
       </ScrollView>
       <View style={[{ alignItems: 'center' }, p(20, 22, 0)]}>
         <View style={styles.qrCard}>
-          <QrMatrix cells={w.qr} />
+          <QrMatrix size={w.qr.size} cells={w.qr.cells} />
           <View style={styles.qrLogo} />
         </View>
-        <Txt style={[f(800, 16, 1.5), { marginTop: 18, maxWidth: 300, textAlign: 'center', letterSpacing: 0.6 }, TNUM]}>{breakAnywhere(w.rcvAddr)}</Txt>
+        <Txt style={[f(800, 16, 1.5), { marginTop: 18, maxWidth: 300, textAlign: 'center', letterSpacing: 0.6 }, TNUM]} testID="receive-address">
+          {breakAnywhere(w.rcvAddr)}
+        </Txt>
         <Txt style={[f(800, 12.5), { marginTop: 6, color: MUTED }]}>{w.rcvNote}</Txt>
       </View>
       <View style={[styles.warnBox, p(14, 16)]}>

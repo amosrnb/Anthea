@@ -3,9 +3,11 @@
 Dieses Dokument beschreibt das Sicherheitsmodell von Anthea v1 (Quelle: `docs/BUILD_PLAN.md`, Abschnitte 2, 5 und 7) und
 den Umsetzungsstand. Es wird mit jeder Phase fortgeschrieben; die Threat-Model-Checkliste wird in Phase 10 abgehakt.
 
-**Stand:** Phase 1. Der kryptografische Kern (Phrase, Ableitung, Vault, `withSigner`) ist umgesetzt und getestet
-(`src/core/`, `src/state/keyring.ts`), aber noch **nicht** mit der Oberfläche verbunden; die App zeigt weiterhin
-Mock-Daten (Anbindung in Phase 2). Keine Netzwerkzugriffe. Der Build darf nicht mit echten Werten verwendet werden.
+**Stand:** Phase 2. Onboarding, PIN und Sperre arbeiten mit dem echten Kern: zufällige Phrase, Vault, Fehlversuchszähler,
+Auto-Lock, „Phrase anzeigen“, „PIN ändern“ und „Wallet zurücksetzen“. Die Empfangsadresse und ihr QR-Code sind echt
+(aus Phase 6 vorgezogen, damit „Import ergibt dieselben Adressen“ prüfbar ist). **Netzwerk: Testnetze** (Bitcoin
+testnet4); Guthaben, Kurse, Verlauf und Senden zeigen weiterhin Mock-Daten. Einzige Netzwerkverbindung: der
+Bitcoin-Adressscan beim Import (mempool.space). Der Build darf nicht mit echten Werten verwendet werden.
 
 ## 1. Grundsätze
 
@@ -74,31 +76,47 @@ react-native-quick-crypto, drei Läufe). Ziel laut 5.2: ca. 0,5–1 s auf einem 
 
 | Gerät | Messung | Datum |
 |---|---|---|
-| Android-Emulator (Pixel 10, x86_64) auf dem Entwickler-PC | ausstehend | |
+| Android-Emulator (sdk_gphone16k_x86_64, API 37) auf dem Entwickler-PC | 488 ms · 463 ms · 418 ms | 2026-09-27 |
 | Echtes Mittelklasse-Android | ausstehend | |
 | iPhone | ausstehend | |
 
-## 4. PIN, Sperre und Sitzung (Phase 2)
+## 4. PIN, Sperre und Sitzung (Phase 2, umgesetzt: `src/core/pinPolicy.ts`, `src/state/session.ts`, `src/useWallet.tsx`)
 
-- Fehlversuchszähler im Secure Storage (überlebt Neustarts). Ab 5 Fehlversuchen steigende Wartezeiten: 1 min, 5 min,
-  15 min, 1 h, danach jeweils 1 h. **Es wird nie automatisch gelöscht.**
-- Auto-Lock nach 1/5/15 min Inaktivität; beim Wechsel in den Hintergrund startet der Timer. Der App-Switcher zeigt immer
-  eine Abdeckung.
-- Nach dem Entsperren hält die Sitzung nur **öffentliche** Daten. Für jede Signatur und für „Phrase anzeigen“ wird der
-  Seed neu mit der PIN entschlüsselt.
-- PIN ändern: alte PIN prüfen, Vault mit neuer PIN neu verschlüsseln, atomar schreiben.
-- Wallet zurücksetzen: Vault, `deviceSecret`, Zähler, Caches und Einstellungen löschen.
+- Fehlversuchszähler im Secure Storage (`anthea.pinAttempts`, überlebt Neustarts). 5 freie Versuche, danach steigende
+  Wartezeiten: 1 min, 5 min, 15 min, 1 h, danach jeweils 1 h. **Es wird nie automatisch gelöscht.** Ein unlesbarer
+  Zähler gilt als „viele Fehlversuche“ (fail closed). Nur eine richtige PIN oder „Wallet zurücksetzen“ setzt ihn zurück.
+  Der Zähler gilt für Entsperren, Signatur-Bestätigung, „Phrase anzeigen“ und „PIN ändern“ gemeinsam.
+- Die Wartezeit hängt an der Geräteuhr. Wer die Systemzeit vorstellt, verkürzt sie; die Zahl der Versuche bleibt davon
+  unberührt, und jeder Versuch kostet die volle KDF-Zeit. Ein monotoner Zeitgeber über Neustarts hinweg existiert auf
+  beiden Plattformen nicht; das Restrisiko ist akzeptiert, weil der Vault ohne `deviceSecret` ohnehin nicht offline
+  angreifbar ist.
+- Auto-Lock nach 1/5/15 min Inaktivität (Einstellung in MMKV, Standard 5 min). Gemessen wird ab der letzten Berührung;
+  im Hintergrund läuft die Zeit weiter, bei Rückkehr wird sofort geprüft. Kaltstart ist immer gesperrt.
+- App-Umschalter (Entscheidung 2026-09-27): iOS verdeckt die Vorschau mit einem Weichzeichner (`expo-screen-capture`,
+  `enableAppSwitcherProtectionAsync`). Android: `FLAG_SECURE` nur auf den Phrasen-Screens, dort ist die Vorschau
+  schwarz; sonst legt die App beim Verlassen eine schwarze Abdeckung über den Inhalt. Das ist **best effort**, weil
+  Android den Vorschau-Screenshot teils vor dem Zustandswechsel aufnimmt.
+- Nach dem Entsperren hält die Sitzung nur **öffentliche** Daten (Adressen, Bitcoin-xpub). Für jede Signatur und für
+  „Phrase anzeigen“ wird der Seed neu mit der PIN entschlüsselt. PIN-Ziffern und Phrase liegen nicht im allgemeinen
+  App-State; die Entropie wird nach dem Onboarding überschrieben, Strings (Wörter) lassen sich in JavaScript nicht
+  sicher löschen und werden nur so kurz wie möglich gehalten.
+- PIN ändern: alte PIN prüfen, Vault mit neuer PIN neu verschlüsseln, unter temporärem Schlüssel schreiben, prüfen,
+  dann ersetzen.
+- Wallet zurücksetzen: Vault, `deviceSecret`, öffentliche Daten, Zähler und Einstellungen löschen (Caches folgen mit
+  den Phasen, die sie einführen).
+- Bitcoin: Beim Import werden Empfangs- und Wechseladressen mit Gap-Limit 20 gescannt (`src/core/btcScan.ts`, nur
+  öffentliche Ableitung aus dem xpub). Neu erstellte Wallets scannen nicht.
 
 ## 5. Weitere Schutzmaßnahmen
 
 | Maßnahme | Phase | Stand |
 |---|---|---|
-| Screenshot-Schutz auf Seed-, Verify-, Import- und Reveal-Screens (Android `FLAG_SECURE`; iOS Aufnahme abdecken, Screenshot-Warnung) | 2 | offen |
-| Seed-Eingabefelder ohne Autokorrektur, Vorschläge, Autofill und Kontextmenü | 0/2 | Props gesetzt (`SEED_INPUT_PROPS`), Prüfung auf Geräten offen |
+| Screenshot-Schutz auf Seed-, Verify-, Import- und Reveal-Screens (Android `FLAG_SECURE`; iOS Aufnahme abdecken, Screenshot-Warnung) | 2 | umgesetzt (`src/platform/screenCapture.ts`); Android-Berechtigung `DETECT_SCREEN_CAPTURE` bewusst entfernt |
+| Seed-Eingabefelder ohne Autokorrektur, Vorschläge, Autofill und Kontextmenü | 0/2 | Props gesetzt (`SEED_INPUT_PROPS`); `keyboardType="visible-password"` (Android) noch offen, weil es mit mehrzeiligen Feldern kollidiert |
 | Verdeckte Seed-Wörter werden nicht gerendert (nur Platzhalter) | 0 | umgesetzt |
 | Backup/Gerätetransfer: `allowBackup=false` und Data-Extraction-Rules für den Secure Store (Android 12+) | 1 | umgesetzt (expo-secure-store-Plugin) |
 | Secure Store nur auf diesem Gerät und im entsperrten Zustand (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`) | 1 | umgesetzt |
-| Adressen kopieren erlaubt, Seed nie; Clipboard nach 60 s leeren, falls unverändert | 6/7 | offen |
+| Adressen kopieren erlaubt, Seed nie; Clipboard nach 60 s leeren, falls unverändert | 6/7 | offen („Einfügen“ liest die Zwischenablage seit Phase 2 nur auf Knopfdruck) |
 | Keine dynamisch nachgeladenen Skripte, kein `eval`, keine Remote-Assets | 0 | eingehalten (Fonts lokal) |
 | Produktions-Build ohne Dev-Menü und Debug-Logs; Bundle-Scan nach verbotenen Mustern in CI | 10 | offen |
 | Vor dem Signieren Chain-ID, `from`, Empfänger/Vertrag, Betrag und Gebühr gegen den Review-Screen prüfen | 7/9 | offen |
@@ -112,8 +130,8 @@ react-native-quick-crypto, drei Läufe). Ziel laut 5.2: ca. 0,5–1 s auf einem 
 | Seed-Entropie (Vault) | Secure Storage | PIN + `deviceSecret` |
 | `deviceSecret` | Keychain / Keystore | hardwaregestützt, nur dieses Gerät |
 | PIN-Fehlversuche, Sperrzeit | Secure Storage | Plattform |
-| Öffentliche Adressen, BTC-Adressindex | Secure Storage | Plattform |
-| Einstellungen, Watchlist, eigene RPCs | MMKV | nicht geheim |
+| Öffentliche Adressen, Bitcoin-xpub und bekannte BTC-Adressen | Secure Storage | Plattform |
+| Einstellungen (ab Phase 2: Auto-Lock), Watchlist, eigene RPCs | MMKV | nicht geheim |
 | Lokaler Aktivitäts- und Empfängerverlauf | MMKV | vom Backup ausgeschlossen |
 | Markt-/Preis-Cache | MMKV | nicht geheim |
 | Beim Proxy | nichts Persistentes außer Marktdaten-Cache | — |
@@ -126,16 +144,12 @@ react-native-quick-crypto, drei Läufe). Ziel laut 5.2: ca. 0,5–1 s auf einem 
 - Rate-Limit pro IP nur im Speicher; adressbezogene Antworten nicht oder höchstens 30 s im Speicher gecacht.
 - Stand Phase 0: nur `GET /v1/health`; unbekannte Pfade 404, andere Methoden 405, unerwartete Fehler 500 ohne Logging.
 
-## 8. Prototyp-Hilfen, die vor dem Release entfernt werden (Phase 2)
+## 8. Prototyp-Hilfen (in Phase 2 entfernt)
 
-Diese Hilfen stammen aus dem Web-Prototyp und existieren in Phase 0 bewusst noch. In einem echten Build dürfen sie
-nicht vorkommen:
-
-- URL-Parameter `?start=`, `?testnet=`, `?privacy=` (nur in der Web-Vorschau ausgewertet, `src/config.ts`).
-- „Beliebige 6 Ziffern werden akzeptiert“, wenn das Onboarding übersprungen wurde.
-- `importDemo` („Testphrase“), `pasteTo` (fügt absichtlich eine Poisoning-Adresse ein), `scanTo` (feste Adresse).
-- `pinFirst`: die PIN liegt im Klartext im React-State.
-- Feste Mock-Seed-Wörter in `src/data.ts`.
+Entfernt wurden: die URL-Parameter `?start=`, `?testnet=`, `?privacy=` (`src/config.ts`), „beliebige 6 Ziffern werden
+akzeptiert“, die Testphrase (`importDemo`), die feste Poisoning-Adresse hinter „Einfügen“ (liest jetzt die echte
+Zwischenablage), die PIN im React-State und die festen Mock-Seed-Wörter. „QR scannen“ zeigt bis Phase 7 nur einen
+Hinweis. Die Web-Vorschau hält den Vault nur im Speicher (kein Secure Storage im Browser).
 
 ## 9. Threat-Model-Checkliste (Phase 10)
 

@@ -1,4 +1,4 @@
-# Send flow with PIN confirmation (mock data, Phase 0).
+# Send flow with PIN confirmation (mock balances; the PIN is checked against the real vault since Phase 2).
 appId: dev.anthea.wallet
 tags:
   - send
@@ -6,6 +6,8 @@ tags:
 - runFlow: onboarding.yaml
 - tapOn: 'Senden'
 - tapOn: 'USDC'
+# "Einfügen" reads the real clipboard since Phase 2
+- setClipboard: '0x71C9e0B7d2F4a9C3e1A8b6D5f0C2e4A7b9d304Ae'
 - tapOn: 'Einfügen'
 - assertVisible: '.*Address-Poisoning-Angriff.*'
 - tapOn: '0x71C9…04Ae'
@@ -21,6 +23,8 @@ tags:
     env:
       PIN: '123456'
       KEYPAD: confirm-key
-- assertVisible: 'Gesendet'
+- extendedWaitUntil:
+    visible: 'Gesendet'
+    timeout: 20000
 - tapOn: 'Fertig'
 - assertVisible: 'GESAMTWERT'

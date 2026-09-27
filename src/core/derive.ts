@@ -32,7 +32,35 @@ export interface AccountPublic {
   network: Network;
   evm: string;
   sol: string;
-  btc: { receive: string[]; change: string[] };
+  btc: {
+    /** Account-level extended public key m/84'/{0|1}'/0' (public data; derives addresses without the PIN). */
+    xpub: string;
+    /** Known receive addresses 0…n; the last one is the first unused (shown on "Empfangen"). */
+    receive: string[];
+    /** Known change addresses 0…n; the last one is the next change address. */
+    change: string[];
+  };
+}
+
+/** BIP84 account path (hardened part) for Bitcoin. */
+export const btcAccountPath = (network: Network) => `m/84'/${network === 'mainnet' ? 0 : 1}'/0'`;
+
+/** Extended public key of the Bitcoin account. Encoded with xpub version bytes for both networks (internal use only). */
+export function btcAccountXpub(seed: Uint8Array, network: Network): string {
+  const root = HDKey.fromMasterSeed(seed);
+  const account = root.derive(btcAccountPath(network));
+  const xpub = account.publicExtendedKey;
+  root.wipePrivateData();
+  account.wipePrivateData();
+  return xpub;
+}
+
+/** Receive (0) or change (1) address `index` from the account xpub, without any private key. */
+export function btcAddressFromXpub(xpub: string, network: Network, chain: BtcChain, index: number): string {
+  const node = HDKey.fromExtendedKey(xpub)
+    .deriveChild(chain === 'receive' ? 0 : 1)
+    .deriveChild(index);
+  return btcAddressFromPublicKey(node.publicKey!, network);
 }
 
 /** BIP39 seed (64 bytes, PBKDF2) from the vault's entropy. The caller must wipe it. */
@@ -101,13 +129,15 @@ export function derivePublic(seed: Uint8Array, network: Network, btcCount: { rec
     return key.address;
   };
   const range = (n: number) => Array.from({ length: n }, (_, i) => i);
+  const xpub = btcAccountXpub(seed, network);
   return {
     network,
     evm: address('evm'),
     sol: address('sol'),
     btc: {
-      receive: range(btcCount.receive).map((i) => address('btc', i, 'receive')),
-      change: range(btcCount.change).map((i) => address('btc', i, 'change')),
+      xpub,
+      receive: range(btcCount.receive).map((i) => btcAddressFromXpub(xpub, network, 'receive', i)),
+      change: range(btcCount.change).map((i) => btcAddressFromXpub(xpub, network, 'change', i)),
     },
   };
 }

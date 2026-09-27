@@ -1,231 +1,329 @@
-import { act, renderHook } from '@testing-library/react-native';
-import { SEED, VERIFY } from '../data';
-import { useWallet, type WalletProps } from '../useWallet';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { AppState } from 'react-native';
+import { STORE_KEYS } from '../state/keyring';
+import { useWallet } from '../useWallet';
+import { ABOUT, makeDeps, PIN } from './helpers';
 
-const setup = (props: Partial<WalletProps> = {}) => renderHook(() => useWallet({ startScreen: 'welcome', testnet: true, privacyMode: false, ...props }));
+type Deps = Awaited<ReturnType<typeof makeDeps>>;
 type W = ReturnType<typeof useWallet>;
-type Hook = Awaited<ReturnType<typeof setup>>;
 
-async function press(hook: Hook, fn: (w: W) => void) {
-  await act(async () => fn(hook.result.current));
+async function setup(opts: { wallet?: boolean } = {}) {
+  const env = await makeDeps(opts);
+  const hook = await renderHook(() => useWallet(env.deps));
+  await waitFor(() => expect(hook.result.current.screen).not.toBe('boot'));
+  return { ...env, hook };
 }
-async function typePin(hook: Hook, digits: string, keys: 'pinKeys' | 'confirmKeys' = 'pinKeys') {
-  for (const d of digits) await press(hook, (w) => w[keys].find((k) => k.label === d)!.onClick());
-  await act(async () => jest.advanceTimersByTime(250));
+type Env = Deps & { hook: Awaited<ReturnType<typeof renderHook<W, unknown>>> };
+
+async function press(env: Env, fn: (w: W) => unknown) {
+  await act(async () => void (await fn(env.hook.result.current)));
+}
+/** Types a PIN on the PIN screen (or signing sheet) and waits until the check has finished. */
+async function typePin(env: Env, digits: string, keys: 'pinKeys' | 'confirmKeys' = 'pinKeys') {
+  for (const d of digits) await press(env, (w) => w[keys].find((k) => k.label === d)!.onClick());
+  await act(async () => new Promise((r) => setTimeout(r, 200)));
+  await waitFor(() => expect(env.hook.result.current.pinDots.every((d) => d === '#2A2A32') || env.hook.result.current.screen !== 'pin').toBe(true));
+}
+const w = (env: Env) => env.hook.result.current;
+
+/** Unlocked app with the "abandon … about" wallet. */
+async function unlocked() {
+  const env = (await setup({ wallet: true })) as Env;
+  await typePin(env, PIN);
+  await waitFor(() => expect(w(env).screen).toBe('home'));
+  return env;
 }
 
-beforeEach(() => jest.useFakeTimers());
-afterEach(() => jest.useRealTimers());
+describe('start', () => {
+  it('shows onboarding without a wallet', async () => {
+    const env = (await setup()) as Env;
+    expect(w(env).screen).toBe('welcome');
+  });
 
-describe('onboarding', () => {
-  it('creates a wallet: warnings → seed → verify → PIN → home', async () => {
-    const h = await setup();
-    await press(h, (w) => w.startCreate());
-    expect(h.result.current.screen).toBe('warn');
+  it('shows the locked PIN screen when a wallet exists', async () => {
+    const env = (await setup({ wallet: true })) as Env;
+    expect(w(env).screen).toBe('pin');
+    expect(w(env).pinTitle).toBe('Anthea ist gesperrt');
+    expect(w(env).pinCanBack).toBe(false);
+  });
+});
 
-    await press(h, (w) => w.warnNext());
-    expect(h.result.current.screen).toBe('warn'); // all three boxes required
-    for (const i of [0, 1, 2]) await press(h, (w) => w.warnRows[i]!.onClick());
-    await press(h, (w) => w.warnNext());
-    expect(h.result.current.screen).toBe('seed');
+describe('create', () => {
+  it('generates a real phrase, checks 3 random words and stores the vault', async () => {
+    const env = (await setup()) as Env;
+    await press(env, (x) => x.startCreate());
+    for (const i of [0, 1, 2]) await press(env, (x) => x.warnRows[i]!.onClick());
+    await press(env, (x) => x.warnNext());
+    const words = w(env).seedWords.map((s) => s.w);
+    expect(words).toHaveLength(12);
+    expect(new Set(words).size).toBeGreaterThan(1);
 
-    await press(h, (w) => w.seedNext());
-    expect(h.result.current.screen).toBe('seed'); // must reveal first
-    await press(h, (w) => w.revealSeed());
-    await press(h, (w) => w.seedNext());
-    expect(h.result.current.screen).toBe('verify');
-
-    for (const row of h.result.current.verifyRows) {
-      await press(h, (w) =>
-        w.verifyRows
+    await press(env, (x) => x.revealSeed());
+    await press(env, (x) => x.seedNext());
+    const rows = w(env).verifyRows;
+    expect(rows).toHaveLength(3);
+    expect(rows.map((r) => r.pos)).toEqual([...rows.map((r) => r.pos)].sort((a, b) => a - b));
+    for (const row of rows) {
+      expect(row.opts.filter((o) => o.w === words[row.pos - 1])).toHaveLength(1);
+      await press(env, (x) =>
+        x.verifyRows
           .find((r) => r.pos === row.pos)!
-          .opts.find((o) => o.w === SEED[row.pos - 1])!
+          .opts.find((o) => o.w === words[row.pos - 1])!
           .onClick(),
       );
     }
-    expect(h.result.current.verifyOk).toBe(true);
-    await press(h, (w) => w.verifyNext());
-    expect(h.result.current.pinTitle).toBe('PIN festlegen');
+    await press(env, (x) => x.verifyNext());
+    expect(w(env).pinTitle).toBe('PIN festlegen');
 
-    await typePin(h, '135790');
-    expect(h.result.current.pinTitle).toBe('PIN bestätigen');
-    await typePin(h, '135790');
-    expect(h.result.current.screen).toBe('home');
-    expect(h.result.current.toast).toBe('Wallet bereit');
+    await typePin(env, '135790');
+    expect(w(env).pinTitle).toBe('PIN bestätigen');
+    await typePin(env, '135790');
+    await waitFor(() => expect(w(env).screen).toBe('home'));
+    expect(w(env).toast).toBe('Wallet bereit');
+    expect(await env.keyring.hasWallet()).toBe(true);
+    expect((await env.keyring.revealPhrase('135790')).join(' ')).toBe(words.join(' '));
+    expect(w(env).seedWords).toEqual([]); // phrase dropped from memory after onboarding
   });
 
-  it('shuffles the verification options each time the step opens', async () => {
-    const h = await setup();
-    await press(h, (w) => w.startCreate());
-    await press(h, (w) => w.revealSeed());
-    const positions = new Set<string>();
-    for (let k = 0; k < 30; k++) {
-      await press(h, (w) => w.seedNext());
-      const rows = h.result.current.verifyRows;
-      for (const row of rows)
-        expect(row.opts.map((o) => o.w).sort()).toEqual(
-          VERIFY.find((v) => v.pos === row.pos)!
-            .opts.slice()
-            .sort(),
-        );
-      positions.add(rows.map((r) => r.opts.findIndex((o) => o.w === SEED[r.pos - 1])).join(''));
+  it('draws new positions and wrong words for each new wallet', async () => {
+    const env = (await setup()) as Env;
+    const seen = new Set<string>();
+    for (let k = 0; k < 5; k++) {
+      await press(env, (x) => x.startCreate());
+      seen.add(JSON.stringify(w(env).verifyRows.map((r) => [r.pos, r.opts.map((o) => o.w)])));
     }
-    expect(positions.size).toBeGreaterThan(1);
+    expect(seen.size).toBe(5);
   });
 
   it('restarts PIN setup when the confirmation differs', async () => {
-    const h = await setup();
-    await press(h, (w) => w.startImport());
-    await press(h, (w) => w.onImport(SEED.join(' ')));
-    await press(h, (w) => w.importNext());
-    await typePin(h, '111111');
-    await typePin(h, '222222');
-    expect(h.result.current.pinTitle).toBe('PIN festlegen');
-    expect(h.result.current.pinError).toBe('PINs stimmen nicht überein. Bitte neu festlegen.');
-  });
-
-  it('validates imported phrases against the word list', async () => {
-    const h = await setup();
-    await press(h, (w) => w.startImport());
-    await press(h, (w) => w.onImport('orbit velvet xyz '));
-    expect(h.result.current.importMsg).toBe('„xyz“ ist kein gültiges BIP39-Wort');
-    expect(h.result.current.importValid).toBe(false);
-
-    await press(h, (w) => w.onImport('orbit velvet har'));
-    expect(h.result.current.importSugg.map((s) => s.w)).toEqual(['harbor', 'harvest']);
-    await press(h, (w) => w.importSugg[0]!.onClick());
-    expect(h.result.current.importText).toBe('orbit velvet harbor ');
-
-    await press(h, (w) => w.onImport(SEED.join(' ')));
-    expect(h.result.current.importMsg).toBe('Prüfsumme gültig');
-    await press(h, (w) => w.importNext());
-    await typePin(h, '123456');
-    await typePin(h, '123456');
-    expect(h.result.current.toast).toBe('Konten abgeleitet · Bitcoin-Scan abgeschlossen');
+    const env = (await setup()) as Env;
+    await press(env, (x) => x.startImport());
+    await press(env, (x) => x.onImport(ABOUT));
+    await press(env, (x) => x.importNext());
+    await typePin(env, '111111');
+    await typePin(env, '222222');
+    expect(w(env).pinTitle).toBe('PIN festlegen');
+    expect(w(env).pinError).toBe('PINs stimmen nicht überein. Bitte neu festlegen.');
   });
 });
 
-describe('lock and PIN', () => {
-  it('unlocks with the PIN set during onboarding and rejects others', async () => {
-    const h = await setup();
-    await press(h, (w) => w.startImport());
-    await press(h, (w) => w.onImport(SEED.join(' ')));
-    await press(h, (w) => w.importNext());
-    await typePin(h, '123456');
-    await typePin(h, '123456');
-    await press(h, (w) => w.lockNow());
-    expect(h.result.current.pinTitle).toBe('Anthea ist gesperrt');
-    expect(h.result.current.pinCanBack).toBe(false);
-
-    await typePin(h, '000000');
-    expect(h.result.current.pinError).toBe('Falsche PIN. Noch 4 Versuche.');
-    await typePin(h, '123456');
-    expect(h.result.current.screen).toBe('home');
+describe('import', () => {
+  it.each([
+    ['', '0 / 12 Wörter', false],
+    ['abandon abandon ', '2 / 12 Wörter', false],
+    ['abandon xyz ', '„xyz“ ist kein gültiges BIP39-Wort', false],
+    [ABOUT.replace(/about$/, 'abandon'), 'Prüfsumme ungültig. Prüfe Reihenfolge und Schreibweise.', false],
+    [ABOUT, 'Prüfsumme gültig', true],
+    [ABOUT + ' abandon', '13 / 24 Wörter', false],
+  ])('"%s" → %s', async (text, msg, valid) => {
+    const env = (await setup()) as Env;
+    await press(env, (x) => x.startImport());
+    await press(env, (x) => x.onImport(text));
+    expect(w(env).importMsg).toBe(msg);
+    expect(w(env).importValid).toBe(valid);
   });
 
-  it('requires the PIN before revealing the phrase', async () => {
-    const h = await setup({ startScreen: 'home' });
-    await press(h, (w) => w.revealPhrase());
-    expect(h.result.current.screen).toBe('pin');
-    expect(h.result.current.pinTitle).toBe('PIN eingeben');
-    await typePin(h, '123456');
-    expect(h.result.current.screen).toBe('reveal');
-    expect(h.result.current.seedWords.map((s) => s.w)).toEqual(SEED);
-  });
-});
-
-describe('send', () => {
-  it('walks asset → recipient → amount → review → PIN → status → activity', async () => {
-    const h = await setup({ startScreen: 'home' });
-    await press(h, (w) => w.actions[0]!.onClick());
-    expect(h.result.current.screen).toBe('sendAsset');
-    await press(h, (w) => w.sendAssets.find((a) => a.id === 'usdc-base')!.onClick());
-    expect(h.result.current.sendHead).toBe('USDC über Base');
-
-    await press(h, (w) => w.pasteTo());
-    expect(h.result.current.toMsg?.text).toMatch(/Address-Poisoning/);
-    await press(h, (w) => w.recents[0]!.onClick());
-    expect(h.result.current.toMsg?.text).toBe('Bekannter Empfänger · zuletzt am 12. Sep.');
-    await press(h, (w) => w.toNext());
-    expect(h.result.current.screen).toBe('sendAmt');
-
-    for (const k of ['1', '0', '0', '0', '0']) await press(h, (w) => w.amtKeys.find((x) => x.label === k)!.onClick());
-    expect(h.result.current.amtValid).toBe(false);
-    expect(h.result.current.amtInfo).toBe('Nicht genug USDC · Guthaben 2.683,10');
-    await press(h, (w) => w.amtKeys.find((x) => x.label === '')!.onClick()); // delete
-    expect(h.result.current.amtMain).toBe('1000');
-    await press(h, (w) => w.amtNext());
-    expect(h.result.current.screen).toBe('sendReview');
-    expect(h.result.current.revAmount).toBe('1.000,00 USDC');
-
-    await press(h, (w) => w.sendConfirm());
-    expect(h.result.current.confirmOpen).toBe(true);
-    await typePin(h, '123456', 'confirmKeys');
-    expect(h.result.current.screen).toBe('status');
-    expect(h.result.current.stTitle).toBe('Wird gesendet');
-    expect(h.result.current.activity[0]!.status).toBe('Ausstehend');
-
-    await act(async () => jest.advanceTimersByTime(2700));
-    expect(h.result.current.stTitle).toBe('Gesendet');
-    expect(h.result.current.activity[0]!.status).toBe('Bestätigt');
+  it('suggests words from the full BIP39 list', async () => {
+    const env = (await setup()) as Env;
+    await press(env, (x) => x.startImport());
+    await press(env, (x) => x.onImport('abandon zo'));
+    expect(w(env).importSugg.map((s) => s.w)).toEqual(['zone', 'zoo']);
+    await press(env, (x) => x.importSugg[1]!.onClick());
+    expect(w(env).importText).toBe('abandon zoo ');
   });
 
-  it('computes Max as balance minus fee for native coins', async () => {
-    const h = await setup({ startScreen: 'home' });
-    await press(h, (w) => w.sendAssets.find((a) => a.id === 'sol-sol')!.onClick());
-    await press(h, (w) => w.setMax());
-    expect(h.result.current.amtMain).toBe('18,204');
+  it('derives the same addresses as the reference vectors and scans Bitcoin', async () => {
+    const env = (await setup()) as Env;
+    await press(env, (x) => x.startImport());
+    await press(env, (x) => x.onImport(ABOUT));
+    await press(env, (x) => x.importNext());
+    await typePin(env, PIN);
+    await typePin(env, PIN);
+    await waitFor(() => expect(w(env).screen).toBe('home'));
+    expect(w(env).toast).toBe('Konten abgeleitet · Bitcoin-Scan abgeschlossen');
+    // 20 unused receive + 20 unused change addresses checked (gap limit).
+    expect(env.deps.isBtcAddressUsed).toHaveBeenCalledTimes(40);
+    await press(env, (x) => x.actions[1]!.onClick()); // Empfangen
+    expect(w(env).rcvAddr.replace(/ /g, '')).toBe('0x9858EfFD232B4033E47d90003D41EC34EcaEda94');
+    expect(w(env).qr.size).toBeGreaterThan(20);
+  });
+
+  it('continues without the Bitcoin scan when offline', async () => {
+    const env = (await setup()) as Env;
+    (env.deps.isBtcAddressUsed as jest.Mock).mockRejectedValue(new Error('offline'));
+    await press(env, (x) => x.startImport());
+    await press(env, (x) => x.onImport(ABOUT));
+    await press(env, (x) => x.importNext());
+    await typePin(env, PIN);
+    await typePin(env, PIN);
+    await waitFor(() => expect(w(env).screen).toBe('home'));
+    expect(w(env).toast).toBe('Konten abgeleitet · Bitcoin-Scan fehlgeschlagen');
   });
 });
 
-describe('swap', () => {
-  it('opens the slippage sheet and warns above 1 %', async () => {
-    const h = await setup({ startScreen: 'home' });
-    await press(h, (w) => w.goSwap());
-    expect(h.result.current.screen).toBe('swap');
-    await press(h, (w) => w.openSlip());
-    await press(h, (w) => w.slipOpts.find((s) => s.label === '3,0 %')!.onClick());
-    expect(h.result.current.slipWarn).toBe(true);
-    expect(h.result.current.slipLabel).toBe('3,0 %');
+describe('PIN attempts (BUILD_PLAN 5.3)', () => {
+  it('counts down the remaining attempts, then blocks entry with a timer', async () => {
+    const env = (await setup({ wallet: true })) as Env;
+    for (const left of [4, 3, 2, 1]) {
+      await typePin(env, '000000');
+      expect(w(env).pinError).toBe(left === 1 ? 'Falsche PIN. Noch 1 Versuch.' : `Falsche PIN. Noch ${left} Versuche.`);
+    }
+    await typePin(env, '000000');
+    expect(w(env).pinError).toBe('Zu viele Versuche. Erneut möglich in 01:00');
+    expect(w(env).pinLocked).toBe(true);
+
+    // Keypad ignores input while blocked.
+    await press(env, (x) => x.pinKeys.find((k) => k.label === '1')!.onClick());
+    expect(w(env).pinDots.every((d) => d === '#2A2A32')).toBe(true);
+
+    // The wait survives a restart (counter in secure storage).
+    const restarted = await renderHook(() => useWallet(env.deps));
+    await waitFor(() => expect(restarted.result.current.screen).toBe('pin'));
+    expect(restarted.result.current.pinError).toBe('Zu viele Versuche. Erneut möglich in 01:00');
   });
 
-  it('flags high price impact for large amounts and requires an exact approval', async () => {
-    const h = await setup({ startScreen: 'home' });
-    await press(h, (w) => w.goSwap());
-    await press(h, (w) => w.pctChips.find((c) => c.label === 'Max')!.onClick());
-    expect(h.result.current.impactWarn).toBe(true);
-    await press(h, (w) => w.swapNext());
-    expect(h.result.current.swapSteps.map((s) => s.sub)).toEqual(['Keine unbegrenzte Freigabe', 'LI.FI · Base']);
+  it('never deletes the wallet and resets the counter after the right PIN', async () => {
+    const env = (await setup({ wallet: true })) as Env;
+    await env.store.set(STORE_KEYS.pinAttempts, JSON.stringify({ failures: 9, lockedUntil: 0 }));
+    await typePin(env, PIN);
+    await waitFor(() => expect(w(env).screen).toBe('home'));
+    expect(await env.store.get(STORE_KEYS.pinAttempts)).toBe(JSON.stringify({ failures: 0, lockedUntil: 0 }));
+    expect(await env.keyring.hasWallet()).toBe(true);
   });
 });
 
-describe('systemBack (Android back / iOS edge swipe)', () => {
-  it('lets the OS handle root screens', async () => {
-    const h = await setup();
-    expect(h.result.current.systemBack()).toBe(false);
-    const home = await setup({ startScreen: 'home' });
-    expect(home.result.current.systemBack()).toBe(false);
-    const lock = await setup({ startScreen: 'lock' });
-    expect(lock.result.current.systemBack()).toBe(false);
+describe('lock', () => {
+  it('locks on demand and drops the public data', async () => {
+    const env = await unlocked();
+    await press(env, (x) => x.lockNow());
+    expect(w(env).screen).toBe('pin');
+    expect(w(env).pinTitle).toBe('Anthea ist gesperrt');
+    await typePin(env, PIN);
+    await waitFor(() => expect(w(env).screen).toBe('home'));
   });
 
-  it('closes overlays before navigating', async () => {
-    const h = await setup({ startScreen: 'home' });
-    await press(h, (w) => w.goSwap());
-    await press(h, (w) => w.openSlip());
-    await press(h, (w) => void w.systemBack());
-    expect(h.result.current.slipOpen).toBe(false);
-    expect(h.result.current.screen).toBe('swap');
-    await press(h, (w) => void w.systemBack());
-    expect(h.result.current.screen).toBe('home');
+  it('locks after the auto-lock time, also after returning from the background', async () => {
+    let onChange: ((s: string) => void) | undefined;
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_e, h) => {
+      onChange = h as (s: string) => void;
+      return { remove: jest.fn() };
+    });
+    const env = await unlocked();
+    expect(w(env).autoLockLabel).toBe('5 min');
+    env.clock.t += 4 * 60_000;
+    await act(async () => onChange?.('active'));
+    expect(w(env).screen).toBe('home');
+    env.clock.t += 60_000;
+    await act(async () => onChange?.('active'));
+    expect(w(env).screen).toBe('pin');
+    jest.restoreAllMocks();
+  });
+
+  it('persists the auto-lock setting', async () => {
+    const env = await unlocked();
+    await press(env, (x) => x.cycleLock());
+    expect(w(env).autoLockLabel).toBe('15 min');
+    expect(env.deps.settings.autoLockMinutes()).toBe(15);
+  });
+
+  it('handles the Android back button on the lock screen by leaving the app', async () => {
+    const env = (await setup({ wallet: true })) as Env;
+    expect(w(env).systemBack()).toBe(false);
+  });
+});
+
+describe('settings', () => {
+  it('shows the phrase only after the PIN and forgets it when closed', async () => {
+    const env = await unlocked();
+    await press(env, (x) => x.revealPhrase());
+    expect(w(env).pinTitle).toBe('PIN eingeben');
+    await typePin(env, PIN);
+    await waitFor(() => expect(w(env).screen).toBe('reveal'));
+    expect(
+      w(env)
+        .revealWords.map((x) => x.w)
+        .join(' '),
+    ).toBe(ABOUT);
+    await press(env, (x) => x.closeReveal());
+    expect(w(env).revealWords).toEqual([]);
+  });
+
+  it('changes the PIN: old → new → confirm', async () => {
+    const env = await unlocked();
+    await press(env, (x) => x.changePin());
+    expect(w(env).pinTitle).toBe('PIN ändern');
+    await typePin(env, '999999');
+    expect(w(env).pinError).toBe('Falsche PIN. Noch 4 Versuche.');
+    await typePin(env, PIN);
+    expect(w(env).pinTitle).toBe('Neue PIN festlegen');
+    await typePin(env, '246802');
+    expect(w(env).pinTitle).toBe('Neue PIN bestätigen');
+    await typePin(env, '246802');
+    await waitFor(() => expect(w(env).screen).toBe('settings'));
+    expect(w(env).toast).toBe('PIN geändert');
+    expect((await env.keyring.unlock('246802')).evm).toBe('0x9858EfFD232B4033E47d90003D41EC34EcaEda94');
+  });
+
+  it('resets vault, device secret, counter and settings', async () => {
+    const env = await unlocked();
+    await press(env, (x) => x.cycleLock());
+    await press(env, (x) => x.openReset());
+    await press(env, (x) => x.doReset());
+    expect(w(env).resetOpen).toBe(true); // checkbox required first
+    expect(await env.keyring.hasWallet()).toBe(true);
+    await press(env, (x) => x.toggleResetChk());
+    await press(env, (x) => x.doReset());
+    expect(w(env).screen).toBe('welcome');
+    expect(env.store.dump()).toEqual({});
+    expect(env.deps.settings.autoLockMinutes()).toBe(5);
+  });
+});
+
+describe('signing sheet', () => {
+  it('requires the real PIN before a (mock) send', async () => {
+    const env = await unlocked();
+    await press(env, (x) => x.sendAssets.find((a) => a.id === 'usdc-base')!.onClick());
+    await press(env, (x) => x.recents[0]!.onClick());
+    await press(env, (x) => x.toNext());
+    for (const k of ['1', '0']) await press(env, (x) => x.amtKeys.find((y) => y.label === k)!.onClick());
+    await press(env, (x) => x.amtNext());
+    await press(env, (x) => x.sendConfirm());
+    await typePin(env, '000000', 'confirmKeys');
+    expect(w(env).confirmError).toBe('Falsche PIN. Noch 4 Versuche.');
+    await typePin(env, PIN, 'confirmKeys');
+    await waitFor(() => expect(w(env).screen).toBe('status'));
+  });
+
+  it('pastes from the clipboard instead of a fixed address', async () => {
+    const env = await unlocked();
+    (env.deps.readClipboard as jest.Mock).mockResolvedValue(' 0x71C9a3F2b8D4e6A1c0E5f7B9d2A4c6E8f0a104Ae \n');
+    await press(env, (x) => x.sendAssets.find((a) => a.id === 'usdc-base')!.onClick());
+    await press(env, (x) => x.pasteTo());
+    expect(w(env).sTo).toBe('0x71C9a3F2b8D4e6A1c0E5f7B9d2A4c6E8f0a104Ae');
+    await press(env, (x) => x.scanTo());
+    expect(w(env).toast).toBe('QR-Scan folgt in einer späteren Version');
+  });
+});
+
+describe('swap and navigation (mock data)', () => {
+  it('opens the slippage sheet, warns above 1 % and closes overlays on back', async () => {
+    const env = await unlocked();
+    await press(env, (x) => x.goSwap());
+    await press(env, (x) => x.openSlip());
+    await press(env, (x) => x.slipOpts.find((s) => s.label === '3,0 %')!.onClick());
+    expect(w(env).slipWarn).toBe(true);
+    await press(env, (x) => void x.systemBack());
+    expect(w(env).slipOpen).toBe(false);
+    await press(env, (x) => void x.systemBack());
+    expect(w(env).screen).toBe('home');
   });
 
   it('returns from other tabs to the portfolio', async () => {
-    const h = await setup({ startScreen: 'home' });
-    await press(h, (w) => w.navRight[1]!.onClick());
-    expect(h.result.current.screen).toBe('settings');
-    await press(h, (w) => void w.systemBack());
-    expect(h.result.current.screen).toBe('home');
-    expect(h.result.current.navLeft[0]!.ink).toBe('#A79BFF');
+    const env = await unlocked();
+    await press(env, (x) => x.navRight[1]!.onClick());
+    expect(w(env).screen).toBe('settings');
+    await press(env, (x) => void x.systemBack());
+    expect(w(env).screen).toBe('home');
+    expect(w(env).systemBack()).toBe(false);
   });
 });

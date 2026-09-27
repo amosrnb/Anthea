@@ -64,75 +64,87 @@ const pin = (digits) => async (page) => {
 };
 const wait = (ms) => async (page) => page.waitForTimeout(ms);
 
-const toHome = [];
+// Since Phase 2 the app has no demo start states and a random phrase: the React Native side runs the real onboarding
+// (reading its words from test IDs), the prototype side keeps its fixed words and `?start=` shortcuts.
+/** Different actions per build; plain actions run on both. */
+const per =
+  ({ proto = [], rn = [] }) =>
+  async (page, isRn) => {
+    for (const a of isRn ? rn : proto) await a(page, isRn);
+  };
+const PIN = '123456';
+const words = async (page) => Promise.all(Array.from({ length: 12 }, (_, i) => page.getByTestId(`phrase-word-${i + 1}`).innerText()));
+/** RN: picks the right word in each verify row; rows listed in `wrong` get a wrong word and stop the sequence. */
+const rnVerify =
+  (wrong = []) =>
+  async (page) => {
+    for (let row = 0; row < 3; row++) {
+      const label = page.getByTestId(`verify-row-${row}`);
+      const right = page.__phrase[Number((await label.innerText()).replace(/\D/g, '')) - 1];
+      const options = label.locator('xpath=..').getByRole('button');
+      const texts = (await options.allInnerTexts()).map((t) => t.trim());
+      await options.nth(wrong.includes(row) ? texts.findIndex((t) => t !== right) : texts.indexOf(right)).click();
+      if (wrong.includes(row)) return;
+    }
+  };
+const rememberPhrase = async (page) => {
+  page.__phrase = await words(page);
+};
+const untilText = (t) => async (page) => page.getByText(t, { exact: true }).first().waitFor({ timeout: 30_000 });
+
 const onboarding = [
   btn('Neues Wallet erstellen'),
   text('Wer die Wörter kennt, besitzt das Geld.'),
   text('Anthea kann sie nicht wiederherstellen.'),
   text('Ich bewahre sie offline und sicher auf.'),
 ];
+const shown = [...onboarding, btn('Wörter anzeigen'), text('Zum Anzeigen tippen'), per({ rn: [rememberPhrase] })];
+const verified = [...shown, btn('Ich habe sie notiert'), per({ proto: [btn('harbor'), btn('lemon'), btn('pepper')], rn: [rnVerify()] })];
+/** RN only: a real wallet (KDF runs in the browser, hence the waits), ending on the portfolio. */
+const rnHome = [
+  ...verified,
+  btn('Weiter'),
+  pin(PIN),
+  wait(400),
+  pin(PIN),
+  async (page) => page.getByRole('button', { name: 'Sperren' }).waitFor({ timeout: 30_000 }),
+  wait(2600), // "Wallet bereit" toast
+];
+const toHome = per({ rn: rnHome });
+const toLock = per({ rn: [...rnHome, btn('Sperren')] });
+const clipboard = (value) => async (page) => page.evaluate((v) => navigator.clipboard.writeText(v), value);
+const unlockPin = per({ proto: [pin(PIN), wait(400)], rn: [pin(PIN), untilText('Wiederherstellungsphrase')] });
+const confirmPin = per({ proto: [wait(500), pin(PIN), wait(500)], rn: [wait(500), pin(PIN), untilText('Wird gesendet')] });
 
-/** name → [start param, actions before the shot, settle ms]. */
+/** name → [prototype start param, actions before the shot, settle ms]. */
 const SHOTS = [
   ['01-welcome', 'welcome', [], 200],
   ['02-warn', 'welcome', [btn('Neues Wallet erstellen')]],
   ['03-warn-checked', 'welcome', onboarding],
   ['04-seed-hidden', 'welcome', [...onboarding, btn('Wörter anzeigen')]],
-  ['05-seed-shown', 'welcome', [...onboarding, btn('Wörter anzeigen'), text('Zum Anzeigen tippen')]],
-  ['06-verify', 'welcome', [...onboarding, btn('Wörter anzeigen'), text('Zum Anzeigen tippen'), btn('Ich habe sie notiert'), btn('harbor'), btn('silver')]],
-  [
-    '07-pin-set',
-    'welcome',
-    [
-      ...onboarding,
-      btn('Wörter anzeigen'),
-      text('Zum Anzeigen tippen'),
-      btn('Ich habe sie notiert'),
-      btn('harbor'),
-      btn('lemon'),
-      btn('pepper'),
-      btn('Weiter'),
-      pin('12'),
-    ],
-  ],
-  [
-    '08-pin-confirm-error',
-    'welcome',
-    [
-      ...onboarding,
-      btn('Wörter anzeigen'),
-      text('Zum Anzeigen tippen'),
-      btn('Ich habe sie notiert'),
-      btn('harbor'),
-      btn('lemon'),
-      btn('pepper'),
-      btn('Weiter'),
-      pin('123456'),
-      wait(400),
-      pin('654321'),
-      wait(400),
-    ],
-  ],
+  ['05-seed-shown', 'welcome', shown],
+  ['06-verify', 'welcome', [...shown, btn('Ich habe sie notiert'), per({ proto: [btn('harbor'), btn('silver')], rn: [rnVerify([1])] })]],
+  ['07-pin-set', 'welcome', [...verified, btn('Weiter'), pin('12')]],
+  ['08-pin-confirm-error', 'welcome', [...verified, btn('Weiter'), pin(PIN), wait(400), pin('654321'), wait(400)]],
   ['09-import', 'welcome', [btn('Bestehendes Wallet importieren'), type('phrase', 'orbit velvet har')]],
-  ['10-lock', 'lock', []],
-  ['11-home', 'home', toHome],
-  ['12-markets', 'home', [btn('Märkte')]],
-  ['13-coin', 'home', [btn('Märkte'), text('Ethereum')]],
-  ['14-receive', 'home', [btn('Empfangen')]],
-  ['15-send-asset', 'home', [btn('Senden')]],
-  ['16-send-to-poisoning', 'home', [btn('Senden'), text('USDC'), btn('Einfügen')]],
-  ['17-send-amount', 'home', [btn('Senden'), text('USDC'), text('0x71C9…04Ae'), btn('Weiter'), btn('1'), btn('2'), btn('0'), btn('0')]],
-  ['18-send-review', 'home', [btn('Senden'), text('USDC'), text('0x71C9…04Ae'), btn('Weiter'), btn('1'), btn('2'), btn('0'), btn('0'), btn('Prüfen')]],
+  ['10-lock', 'lock', [toLock]],
+  ['11-home', 'home', [toHome]],
+  ['12-markets', 'home', [toHome, btn('Märkte')]],
+  ['13-coin', 'home', [toHome, btn('Märkte'), text('Ethereum')]],
+  ['14-receive', 'home', [toHome, btn('Empfangen')]],
+  ['15-send-asset', 'home', [toHome, btn('Senden')]],
+  [
+    '16-send-to-poisoning',
+    'home',
+    [toHome, btn('Senden'), text('USDC'), per({ rn: [clipboard('0x71C9e0B7d2F4a9C3e1A8b6D5f0C2e4A7b9d304Ae')] }), btn('Einfügen')],
+  ],
+  ['17-send-amount', 'home', [toHome, btn('Senden'), text('USDC'), text('0x71C9…04Ae'), btn('Weiter'), btn('1'), btn('2'), btn('0'), btn('0')]],
+  ['18-send-review', 'home', [toHome, btn('Senden'), text('USDC'), text('0x71C9…04Ae'), btn('Weiter'), btn('1'), btn('2'), btn('0'), btn('0'), btn('Prüfen')]],
   [
     '19-confirm-sheet',
     'home',
-    [btn('Senden'), text('USDC'), text('0x71C9…04Ae'), btn('Weiter'), btn('1'), btn('2'), btn('0'), btn('Prüfen'), btn('Mit PIN bestätigen'), pin('12')],
-    700,
-  ],
-  [
-    '20-status-pending',
-    'home',
     [
+      toHome,
       btn('Senden'),
       text('USDC'),
       text('0x71C9…04Ae'),
@@ -142,9 +154,25 @@ const SHOTS = [
       btn('0'),
       btn('Prüfen'),
       btn('Mit PIN bestätigen'),
-      wait(500),
-      pin('123456'),
-      wait(500),
+      pin('12'),
+    ],
+    700,
+  ],
+  [
+    '20-status-pending',
+    'home',
+    [
+      toHome,
+      btn('Senden'),
+      text('USDC'),
+      text('0x71C9…04Ae'),
+      btn('Weiter'),
+      btn('1'),
+      btn('2'),
+      btn('0'),
+      btn('Prüfen'),
+      btn('Mit PIN bestätigen'),
+      confirmPin,
     ],
     0,
   ],
@@ -152,6 +180,7 @@ const SHOTS = [
     '21-status-done',
     'home',
     [
+      toHome,
       btn('Senden'),
       text('USDC'),
       text('0x71C9…04Ae'),
@@ -161,23 +190,22 @@ const SHOTS = [
       btn('0'),
       btn('Prüfen'),
       btn('Mit PIN bestätigen'),
-      wait(500),
-      pin('123456'),
-      wait(3200),
+      confirmPin,
+      wait(2700),
     ],
     0,
   ],
-  ['22-swap', 'home', [btn('Swappen', -1)], 300],
-  ['23-slippage-sheet', 'home', [btn('Swappen', -1), text('Slippage 0,5 %'), text('3,0 %')], 700],
-  ['24-swap-review', 'home', [btn('Swappen', -1), btn('Swap prüfen')]],
-  ['25-activity', 'home', [btn('Aktivität')]],
-  ['26-tx-detail', 'home', [btn('Aktivität'), text('USDC → ETH')]],
-  ['27-settings', 'home', [btn('Einstellungen')]],
-  ['28-rpc', 'home', [btn('Einstellungen'), row('Netzwerke & RPC')]],
-  ['29-reveal-pin', 'home', [btn('Einstellungen'), row('Wiederherstellungsphrase anzeigen')]],
-  ['30-reveal', 'home', [btn('Einstellungen'), row('Wiederherstellungsphrase anzeigen'), pin('123456'), wait(400)]],
-  ['31-reset-sheet', 'home', [btn('Einstellungen'), text('Wallet zurücksetzen'), text('Ich habe meine Phrase gesichert')], 700],
-  ['32-toast', 'home', [btn('Märkte'), text('Ethereum'), btn('Watchlist')], 350],
+  ['22-swap', 'home', [toHome, btn('Swappen', -1)], 300],
+  ['23-slippage-sheet', 'home', [toHome, btn('Swappen', -1), text('Slippage 0,5 %'), text('3,0 %')], 700],
+  ['24-swap-review', 'home', [toHome, btn('Swappen', -1), btn('Swap prüfen')]],
+  ['25-activity', 'home', [toHome, btn('Aktivität')]],
+  ['26-tx-detail', 'home', [toHome, btn('Aktivität'), text('USDC → ETH')]],
+  ['27-settings', 'home', [toHome, btn('Einstellungen')]],
+  ['28-rpc', 'home', [toHome, btn('Einstellungen'), row('Netzwerke & RPC')]],
+  ['29-reveal-pin', 'home', [toHome, btn('Einstellungen'), row('Wiederherstellungsphrase anzeigen')]],
+  ['30-reveal', 'home', [toHome, btn('Einstellungen'), row('Wiederherstellungsphrase anzeigen'), unlockPin]],
+  ['31-reset-sheet', 'home', [toHome, btn('Einstellungen'), text('Wallet zurücksetzen'), text('Ich habe meine Phrase gesichert')], 700],
+  ['32-toast', 'home', [toHome, btn('Märkte'), text('Ethereum'), btn('Watchlist')], 350],
 ].filter(([name]) => !only || only.includes(name));
 
 // The prototype loads Nunito from Google Fonts. Serve the identical bundled files (Nunito v3.602, same as Google's)
@@ -201,19 +229,22 @@ async function localFonts(page) {
 const PROTOTYPE_STATUS_BAR = 16 + 15 * 1.364;
 
 async function shoot(browser, base, [, start, actions, settle = 450], alignTop = false) {
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const isRn = base === rn.url;
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
+  const page = await context.newPage();
   await localFonts(page);
-  await page.goto(`${base}?start=${start}`);
+  await page.goto(isRn ? base : `${base}?start=${start}`);
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => document.fonts.ready);
   if (alignTop) await page.getByTestId('device').evaluate((el, top) => (el.style.paddingTop = top + 'px'), PROTOTYPE_STATUS_BAR);
   for (const a of actions) {
-    await a(page);
+    await a(page, isRn);
     await page.waitForTimeout(60);
   }
   await page.waitForTimeout(settle);
   const png = await page.screenshot();
-  await page.close();
+  await context.close();
   return png;
 }
 

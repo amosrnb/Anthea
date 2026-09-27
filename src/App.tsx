@@ -2,9 +2,8 @@ import { BlurView } from 'expo-blur';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { BackHandler, Platform, StyleSheet, View, type GestureResponderEvent, type ViewProps } from 'react-native';
+import { AppState, BackHandler, Platform, StyleSheet, View, type GestureResponderEvent, type ViewProps } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { prototypeProps } from './config';
 import { IND, INK, NEG } from './data';
 import { Activity, Reveal, Rpc, Settings, TxDetail } from './screens/Account';
 import { Import, Pin, PinDots, PinPad, Seed, Verify, Warn, Welcome } from './screens/Onboarding';
@@ -13,9 +12,15 @@ import { SlippageSheet, Status, Swap, SwapReview } from './screens/Swap';
 import { Receive, SendAmount, SendAsset, SendReview, SendTo } from './screens/Transfer';
 import { Btn, f, FONT_FILES, isWeb, MUTED, Sheet, Txt, useBottomExtra } from './ui';
 import { Icon, ToastCheck } from './ui/icons';
-import { useWallet, type Screen, type Wallet, type WalletProps } from './useWallet';
+import { enableAppSwitcherProtection, useSecureScreen } from './platform/screenCapture';
+import { appServices, type WalletDeps } from './state/appServices';
+import { useWallet, type Screen, type Wallet } from './useWallet';
+
+/** Black screen while the app checks whether a wallet exists (same colour as the splash). */
+const Boot = () => <View style={{ flex: 1 }} />;
 
 const SCREENS: Record<Screen, ComponentType<{ w: Wallet }>> = {
+  boot: Boot,
   welcome: Welcome,
   warn: Warn,
   seed: Seed,
@@ -108,7 +113,15 @@ function ConfirmSheet({ w }: { w: Wallet }) {
       <Txt accessibilityRole="alert" style={[f(800, 13), { height: 18, marginTop: 10, color: NEG, textAlign: 'center' }]}>
         {w.confirmError}
       </Txt>
-      <PinPad keys={w.confirmKeys} testIDPrefix="confirm-key" keyHeight={58} fontSize={24} rowGap={8} style={{ paddingTop: 6, paddingHorizontal: 24 }} />
+      <PinPad
+        keys={w.confirmKeys}
+        disabled={w.pinLocked}
+        testIDPrefix="confirm-key"
+        keyHeight={58}
+        fontSize={24}
+        rowGap={8}
+        style={{ paddingTop: 6, paddingHorizontal: 24 }}
+      />
     </Sheet>
   );
 }
@@ -164,14 +177,36 @@ function useSystemBack(onBack: () => boolean): ViewProps {
   };
 }
 
-function Device(props: WalletProps) {
-  const w = useWallet(props);
+/** Whether the app is in the foreground; anything else (app switcher, background, calls) gets the cover. */
+function useAppActive(): boolean {
+  const [active, setActive] = useState(AppState.currentState === 'active' || AppState.currentState == null);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => setActive(s === 'active'));
+    return () => sub.remove();
+  }, []);
+  return active;
+}
+
+/**
+ * Covers the UI whenever the app is not active (BUILD_PLAN 5.3: the app switcher always shows a cover). On Android the
+ * system may take the recents snapshot before this renders; phrase screens are additionally protected by FLAG_SECURE.
+ */
+const PrivacyCover = () => (
+  <View style={[styles.cover, styles.center]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: IND }} />
+  </View>
+);
+
+function Device({ deps }: { deps: WalletDeps }) {
+  const w = useWallet(deps);
   const insets = useSafeAreaInsets();
   const Current = SCREENS[w.screen];
   const backGesture = useSystemBack(w.systemBack);
+  const active = useAppActive();
+  useSecureScreen(w.isPhraseScreen, w.screenshotWarning);
 
   return (
-    <View testID="device" style={[styles.device, { paddingTop: isWeb ? WEB_TOP_INSET : insets.top }]} {...backGesture}>
+    <View testID="device" style={[styles.device, { paddingTop: isWeb ? WEB_TOP_INSET : insets.top }]} onTouchStart={w.touch} {...backGesture}>
       <StatusBar style="light" />
       <Current w={w} />
       {w.showDock && <Dock w={w} />}
@@ -179,18 +214,20 @@ function Device(props: WalletProps) {
       {w.resetOpen && <ResetSheet w={w} />}
       {w.confirmOpen && <ConfirmSheet w={w} />}
       {w.toast && <Toast text={w.toast} />}
+      {!active && !isWeb && <PrivacyCover />}
     </View>
   );
 }
 
-export default function App({ walletProps }: { walletProps?: WalletProps }) {
+export default function App({ deps }: { deps?: WalletDeps }) {
   const [fontsLoaded] = useFonts(FONT_FILES);
-  const [props] = useState(() => walletProps ?? prototypeProps());
+  const [services] = useState(() => deps ?? appServices());
+  useEffect(enableAppSwitcherProtection, []);
   return (
     <SafeAreaProvider style={styles.stage}>
       {fontsLoaded ? (
         <View style={isWeb ? styles.webFrame : styles.fill}>
-          <Device {...props} />
+          <Device deps={services} />
         </View>
       ) : null}
     </SafeAreaProvider>
@@ -202,6 +239,7 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   webFrame: { width: 390, height: 844, overflow: 'hidden' },
   device: { flex: 1, backgroundColor: '#000000' },
+  cover: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 100, backgroundColor: '#000000' },
   center: { alignItems: 'center', justifyContent: 'center' },
   dock: { position: 'absolute', left: 18, right: 18, height: 66, borderRadius: 26, boxShadow: '0 18px 44px rgba(0,0,0,.55)', zIndex: 10 },
   dockGlass: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: 26, overflow: 'hidden' },

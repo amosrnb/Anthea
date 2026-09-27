@@ -25,3 +25,5 @@ Verbindliche Spezifikation: `docs/BUILD_PLAN.md` (vor jeder Phase vollständig l
 | 2026-09-27 | Verifikation der Phrase | Reihenfolge der drei Antwortoptionen je Zeile immer zufällig (bei jedem Öffnen neu) |
 | 2026-09-27 | PIN-Tastenfeld | Tasten kreisrund, nicht oval (bewusste Abweichung vom Prototyp) |
 | 2026-09-27 | Empfangsadresse | Umbruch zwischen beliebigen Zeichen wie im Prototyp (`break-all`), nicht nur an den 4er-Gruppen |
+| 2026-09-27 | App-Umschalter | `FLAG_SECURE` nur auf Phrasen-Screens (Seed, Prüfen, Import, Anzeigen); sonst schwarze Abdeckung, sobald die App nicht aktiv ist (Android best effort), iOS Weichzeichner |
+| 2026-09-27 | Senden: „Einfügen“ / „QR scannen“ | „Einfügen“ liest die echte Zwischenablage; „QR scannen“ zeigt bis Phase 7 den Hinweis „QR-Scan folgt in einer späteren Version“ |

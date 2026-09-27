@@ -2,6 +2,7 @@ import { Children, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { NEG, POS } from '../data';
 import { BigBtn, Btn, Cta, f, Header, HeaderTitle, KvRows, MUTED, Overline, p, PrimaryCta, Screen, Scroll, TNUM, Txt, useBottomExtra } from '../ui';
+import { PHRASE_BADGES } from '../platform/screenCapture';
 import type { Wallet } from '../useWallet';
 import { WordGrid } from './Onboarding';
 
@@ -164,11 +165,11 @@ export function Reveal({ w }: { w: Wallet }) {
         <Txt style={[f(800, 13.5, 1.45), { color: '#FFB9AE' }]}>Wer die Wörter kennt, besitzt das Geld. Zeige sie niemandem, auch nicht dem Support.</Txt>
       </View>
       <View style={{ marginTop: 14, marginHorizontal: 16 }}>
-        <WordGrid words={w.seedWords} cell={11} cellBg="#141418" />
+        <WordGrid words={w.revealWords} cell={11} cellBg="#141418" />
       </View>
-      <Txt style={[f(800, 12), { color: '#A79BFF' }, p(12, 20, 0)]}>Screenshots blockiert · Kopieren deaktiviert</Txt>
+      <Txt style={[f(800, 12), { color: '#A79BFF' }, p(12, 20, 0)]}>{PHRASE_BADGES.join(' · ')}</Txt>
       <Cta>
-        <PrimaryCta onClick={w.back}>Fertig</PrimaryCta>
+        <PrimaryCta onClick={w.closeReveal}>Fertig</PrimaryCta>
       </Cta>
     </Screen>
   );
