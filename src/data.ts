@@ -289,55 +289,6 @@ export const COINS: Coin[] = [
   },
 ];
 
-export const SEED = ['orbit', 'velvet', 'harbor', 'canyon', 'marble', 'tunnel', 'lemon', 'rapid', 'ivory', 'signal', 'pepper', 'august'];
-/** Demo subset of the BIP39 list used for import validation and suggestions. */
-export const WORDS = SEED.concat([
-  'abandon',
-  'ability',
-  'able',
-  'about',
-  'above',
-  'absent',
-  'cactus',
-  'rocket',
-  'ripple',
-  'silver',
-  'ocean',
-  'orange',
-  'order',
-  'velvet',
-  'venue',
-  'harvest',
-  'hat',
-  'canal',
-  'candy',
-  'canvas',
-  'march',
-  'margin',
-  'tunnel',
-  'turtle',
-  'lemon',
-  'lend',
-  'random',
-  'range',
-  'rapid',
-  'ivory',
-  'island',
-  'sign',
-  'silent',
-  'pen',
-  'people',
-  'pepper',
-  'audit',
-  'august',
-  'aunt',
-]);
-export const VERIFY = [
-  { pos: 3, opts: ['rocket', 'harbor', 'marble'] },
-  { pos: 7, opts: ['ripple', 'silver', 'lemon'] },
-  { pos: 11, opts: ['pepper', 'cactus', 'orbit'] },
-];
-
 export const ADDR: Record<Family, string> = {
   evm: '0xB4a27C1e9D3f58A0b6E2c4D8f1A3e5C7b9D09Fc1',
   sol: '7xKpV3mR9qTn2WbYz8LcHd5FjAe4Ug6Ns1Po3Qr7iBtM',

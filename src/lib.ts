@@ -1,4 +1,5 @@
-import { ADDR, INK, RECENT, type Family } from './data';
+import { encode } from 'uqr';
+import { ADDR, RECENT, type Family } from './data';
 
 export const famOf = (net: string): Family => (net === 'Solana' ? 'sol' : net === 'Bitcoin' ? 'btc' : 'evm');
 export const short = (a: string) => (a ? a.slice(0, 6) + '…' + a.slice(-4) : '');
@@ -33,31 +34,13 @@ export function chart(seed: number, n: number, vol: number, trend: number, W: nu
   return { line, area: line + ' L' + W + ' ' + H + ' L0 ' + H + ' Z' };
 }
 
-/** Decorative 29×29 QR-style matrix (finder patterns + hashed noise, center cleared for the logo). */
-export function qrCells(addr: string): string[] {
-  const N = 29;
-  const seedQ = addr.split('').reduce((s, ch) => s + ch.charCodeAt(0), 0);
-  const cells: string[] = [];
-  for (let r = 0; r < N; r++)
-    for (let c = 0; c < N; c++) {
-      let f = -1;
-      for (const [r0, c0] of [
-        [0, 0],
-        [0, N - 7],
-        [N - 7, 0],
-      ] as [number, number][]) {
-        if (r >= r0 && r < r0 + 7 && c >= c0 && c < c0 + 7) {
-          f = r === r0 || r === r0 + 6 || c === c0 || c === c0 + 6 || (r >= r0 + 2 && r <= r0 + 4 && c >= c0 + 2 && c <= c0 + 4) ? 1 : 0;
-        }
-      }
-      if (f >= 0) {
-        cells.push(f ? '#000000' : INK);
-        continue;
-      }
-      const h = Math.sin(r * 12.9898 + c * 78.233 + seedQ) * 43758.5453;
-      cells.push(!(r > 10 && r < 18 && c > 10 && c < 18) && h - Math.floor(h) > 0.5 ? '#000000' : INK);
-    }
-  return cells;
+/**
+ * Real QR code matrix (row-major, true = dark module, no quiet zone). Error correction H (30 %) because the logo in
+ * the centre covers modules (BUILD_PLAN Phase 6: at least M).
+ */
+export function qrMatrix(text: string): { size: number; cells: boolean[] } {
+  const { data, size } = encode(text, { ecc: 'H', border: 0 });
+  return { size, cells: data.flat() };
 }
 
 export type AddrCheck = { kind: 'ok' | 'info' | 'warn' | 'err'; text: string };

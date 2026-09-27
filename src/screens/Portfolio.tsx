@@ -1,28 +1,7 @@
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { IND, POS } from '../data';
-import {
-  AreaChart,
-  BackButton,
-  Blurred,
-  Btn,
-  Chip,
-  Cta,
-  DIM,
-  f,
-  Grid,
-  IconBtn,
-  Mark,
-  MUTED,
-  p,
-  RangeTabs,
-  Screen,
-  Scroll,
-  TNUM,
-  Txt,
-  webOnly,
-  WHITE,
-} from '../ui';
+import { AreaChart, BackButton, Btn, Chip, Cta, DIM, f, Grid, IconBtn, Mark, MUTED, p, RangeTabs, Screen, Scroll, TNUM, Txt, webOnly, WHITE } from '../ui';
 import { LockIcon, ScanIcon, SearchIcon } from '../ui/icons';
 import type { Wallet } from '../useWallet';
 
@@ -49,9 +28,7 @@ export function Home({ w }: { w: Wallet }) {
 
       <View style={[{ alignItems: 'center', gap: 10 }, p(30, 22, 0)]}>
         <Txt style={[f(800, 12), { letterSpacing: 1.2, color: MUTED }]}>GESAMTWERT</Txt>
-        <Blurred on={w.privacy} radius={10}>
-          <Txt style={[f(900, 44, 1), { letterSpacing: 0.5 }, TNUM]}>{w.total}</Txt>
-        </Blurred>
+        <Txt style={[f(900, 44, 1), { letterSpacing: 0.5 }, TNUM]}>{w.total}</Txt>
         <View style={[styles.row, { gap: 8 }]}>
           <View style={[styles.deltaPill, p(4, 9)]}>
             <Txt style={[f(800, 12), TNUM, { color: w.totalDeltaInk }]}>{w.totalDelta}</Txt>
@@ -98,9 +75,7 @@ export function Home({ w }: { w: Wallet }) {
               <Txt style={[f(800, 12.5), { color: MUTED, marginTop: 4 }, TNUM]}>{h.sub}</Txt>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Blurred on={w.privacy} radius={10}>
-                <Txt style={[f(800, 15.5), TNUM]}>{h.value}</Txt>
-              </Blurred>
+              <Txt style={[f(800, 15.5), TNUM]}>{h.value}</Txt>
               <Txt style={[f(800, 12.5), { color: h.chgInk, marginTop: 4 }, TNUM]}>{h.chg}</Txt>
             </View>
           </Btn>

@@ -1,110 +1,111 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { BackHandler } from 'react-native';
 import App from '../App';
-import { SEED } from '../data';
-import type { WalletProps } from '../useWallet';
+import { ABOUT, makeDeps, PIN } from './helpers';
 
-const renderApp = (props: Partial<WalletProps> = {}) => render(<App walletProps={{ startScreen: 'welcome', testnet: true, privacyMode: false, ...props }} />);
-const tap = async (text: string) => fireEvent.press(screen.getByText(text));
+jest.mock('expo-screen-capture', () => ({
+  preventScreenCaptureAsync: jest.fn(async () => undefined),
+  allowScreenCaptureAsync: jest.fn(async () => undefined),
+  enableAppSwitcherProtectionAsync: jest.fn(async () => undefined),
+  addScreenshotListener: jest.fn(() => ({ remove: jest.fn() })),
+}));
+jest.mock('expo-clipboard', () => ({ getStringAsync: jest.fn(async () => '') }));
+
+const tap = async (text: string | RegExp) => fireEvent.press(screen.getByText(text));
 const tapLabel = async (label: string) => fireEvent.press(screen.getAllByLabelText(label).at(-1)!);
-async function pin(digits: string) {
-  for (const d of digits) await tapLabel(d);
-  await act(async () => jest.advanceTimersByTime(250));
+async function pin(digits: string, prefix = 'pin-key') {
+  for (const d of digits) await fireEvent.press(screen.getByTestId(`${prefix}-${d}`));
+  await act(async () => new Promise((r) => setTimeout(r, 250)));
 }
 
-beforeEach(() => jest.useFakeTimers());
-afterEach(() => jest.useRealTimers());
+async function renderApp(wallet = false) {
+  const env = await makeDeps({ wallet });
+  await render(<App deps={env.deps} />);
+  await waitFor(() => expect(screen.queryByText(wallet ? 'Anthea ist gesperrt' : 'Deine Schlüssel. Dein Gerät.')).toBeOnTheScreen());
+  return env;
+}
+async function unlock() {
+  const env = await renderApp(true);
+  await pin(PIN);
+  await waitFor(() => expect(screen.getByText('GESAMTWERT')).toBeOnTheScreen());
+  return env;
+}
 
-it('onboards a new wallet through the prototype click path', async () => {
-  await renderApp();
-  expect(screen.getByText('Deine Schlüssel. Dein Gerät.')).toBeOnTheScreen();
-
+it('creates a wallet through the real onboarding', async () => {
+  const env = await renderApp();
   await tap('Neues Wallet erstellen');
   await tap('Wer die Wörter kennt, besitzt das Geld.');
   await tap('Anthea kann sie nicht wiederherstellen.');
   await tap('Ich bewahre sie offline und sicher auf.');
-  expect(screen.getByRole('checkbox', { name: /Ich bewahre/ })).toBeChecked();
   await tap('Wörter anzeigen');
 
-  expect(screen.getByText('Deine Wiederherstellungsphrase')).toBeOnTheScreen();
-  for (const word of SEED) expect(screen.queryByText(word)).toBeNull(); // hidden words are not rendered at all
+  expect(screen.queryByTestId('phrase-word-1')).toBeNull(); // hidden words are not rendered
   await tap('Zum Anzeigen tippen');
-  for (const word of SEED) expect(screen.getByText(word)).toBeOnTheScreen();
+  const words = Array.from({ length: 12 }, (_, i) => screen.getByTestId(`phrase-word-${i + 1}`).props.children as string);
   await tap('Ich habe sie notiert');
-  await tap(SEED[2]!);
-  await tap(SEED[6]!);
-  await tap(SEED[10]!);
+
+  for (let row = 0; row < 3; row++) {
+    const pos = Number(String(screen.getByTestId(`verify-row-${row}`).props.children).replace('WORT #', ''));
+    await tap(words[pos - 1]!);
+  }
   await tap('Weiter');
-
-  expect(screen.getByText('PIN festlegen')).toBeOnTheScreen();
   await pin('246810');
-  expect(screen.getByText('PIN bestätigen')).toBeOnTheScreen();
   await pin('246810');
-
-  expect(screen.getByText('GESAMTWERT')).toBeOnTheScreen();
+  await waitFor(() => expect(screen.getByText('GESAMTWERT')).toBeOnTheScreen());
   expect(screen.getByText('Wallet bereit')).toBeOnTheScreen();
-  expect(screen.getByText('TESTNETZ')).toBeOnTheScreen();
+  expect((await env.keyring.revealPhrase('246810')).join(' ')).toBe(words.join(' '));
 });
 
-it('switches tabs via the dock and opens coin details from the markets list', async () => {
-  await renderApp({ startScreen: 'home' });
-  await tapLabel('Märkte');
-  expect(screen.getByPlaceholderText('Coin suchen')).toBeOnTheScreen();
-  await fireEvent.changeText(screen.getByPlaceholderText('Coin suchen'), 'sol');
-  expect(screen.queryByText('Bitcoin')).toBeNull();
-  await tap('Solana');
-  expect(screen.getByText('MARKTKAP.')).toBeOnTheScreen();
-  await tapLabel('Watchlist');
-  expect(screen.getByText('Aus Watchlist entfernt')).toBeOnTheScreen();
+it('imports a phrase and shows its real receive address with a QR code', async () => {
+  await renderApp();
+  await tap('Bestehendes Wallet importieren');
+  expect(screen.queryByText('Testphrase')).toBeNull(); // prototype helper removed
+  await fireEvent.changeText(screen.getByLabelText('Wiederherstellungsphrase'), ABOUT);
+  expect(screen.getByText('Prüfsumme gültig')).toBeOnTheScreen();
+  await tap('Importieren');
+  await pin(PIN);
+  await pin(PIN);
+  await waitFor(() => expect(screen.getByText('Konten abgeleitet · Bitcoin-Scan abgeschlossen')).toBeOnTheScreen());
+  await tap('Empfangen');
+  expect(screen.getByLabelText('QR-Code der Adresse')).toBeOnTheScreen();
+  expect(screen.getByText(/^0/).props.children.replace(/[​ ]/g, '')).toBe('0x9858EfFD232B4033E47d90003D41EC34EcaEda94');
+});
 
-  await tapLabel('Zurück');
-  await tapLabel('Aktivität');
-  await tap('USDC → ETH');
-  expect(screen.getByText('Transaktion')).toBeOnTheScreen();
-  await tapLabel('Zurück');
+it('locks, rejects a wrong PIN and unlocks again', async () => {
+  await unlock();
+  await tapLabel('Sperren');
+  expect(screen.getByText('Anthea ist gesperrt')).toBeOnTheScreen();
+  await pin('000000');
+  await waitFor(() => expect(screen.getByText('Falsche PIN. Noch 4 Versuche.')).toBeOnTheScreen());
+  await pin(PIN);
+  await waitFor(() => expect(screen.getByText('GESAMTWERT')).toBeOnTheScreen());
+});
+
+it('shows the phrase after the PIN, then resets the wallet', async () => {
+  const env = await unlock();
   await tapLabel('Einstellungen');
-  expect(screen.getByText('Wallet zurücksetzen')).toBeOnTheScreen();
-});
-
-it('sends with PIN confirmation and shows the status screen', async () => {
-  await renderApp({ startScreen: 'home' });
-  await tap('Senden');
-  await tap('USDC');
-  await tap('Einfügen');
-  expect(screen.getByText(/Möglicher Address-Poisoning-Angriff/)).toBeOnTheScreen();
-  await tap('0x71C9…04Ae');
-  await tap('Weiter');
-  for (const d of '250') await tapLabel(d);
-  await tap('Prüfen');
-  expect(screen.getByText('250,00 USDC')).toBeOnTheScreen();
-  await tap('Mit PIN bestätigen');
-  expect(screen.getByText('Signatur auf diesem Gerät')).toBeOnTheScreen();
-  await pin('123456');
-  expect(screen.getByText('Wird gesendet')).toBeOnTheScreen();
-  await act(async () => jest.advanceTimersByTime(2700));
-  expect(screen.getByText('Gesendet')).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: /^Wiederherstellungsphrase anzeigen/ }));
+  await pin(PIN);
+  await waitFor(() => expect(screen.getByTestId('phrase-word-12')).toHaveTextContent('about'));
   await tap('Fertig');
-  expect(screen.getByText('GESAMTWERT')).toBeOnTheScreen();
-});
-
-it('reviews a swap and resets the wallet from settings', async () => {
-  await renderApp({ startScreen: 'home' });
-  await tapLabel('Swappen');
-  await tap('Slippage 0,5 %');
-  await tap('1,0 %');
-  await tap('Übernehmen');
-  await tap('Swap prüfen');
-  expect(screen.getByText('LI.FI Diamond · Allowlist')).toBeOnTheScreen();
-  await tapLabel('Zurück');
-  await tapLabel('Schließen');
-
-  await tapLabel('Einstellungen');
   await tap('Wallet zurücksetzen');
-  await tap('Endgültig zurücksetzen');
-  expect(screen.getByText('Wallet zurücksetzen?')).toBeOnTheScreen(); // needs the checkbox first
   await tap('Ich habe meine Phrase gesichert');
   await tap('Endgültig zurücksetzen');
-  expect(screen.getByText('Deine Schlüssel. Dein Gerät.')).toBeOnTheScreen();
+  await waitFor(() => expect(screen.getByText('Deine Schlüssel. Dein Gerät.')).toBeOnTheScreen());
+  expect(await env.keyring.hasWallet()).toBe(false);
+});
+
+it('sends (mock) only after the PIN in the signing sheet', async () => {
+  await unlock();
+  await tap('Senden');
+  await tap('USDC');
+  await tap('0x71C9…04Ae');
+  await tap('Weiter');
+  for (const d of '25') await tapLabel(d);
+  await tap('Prüfen');
+  await tap('Mit PIN bestätigen');
+  await pin(PIN, 'confirm-key');
+  await waitFor(() => expect(screen.getByText('Wird gesendet')).toBeOnTheScreen());
 });
 
 it('handles the Android back button: back within flows, exit on root screens', async () => {
@@ -113,23 +114,13 @@ it('handles the Android back button: back within flows, exit on root screens', a
     onBack = handler;
     return { remove: jest.fn() };
   });
-  await renderApp({ startScreen: 'home' });
+  await unlock();
   await tap('Empfangen');
-  expect(screen.getByText('NETZWERK')).toBeOnTheScreen();
-
   let handled: boolean | null | undefined;
   await act(async () => void (handled = onBack?.({} as never)));
   expect(handled).toBe(true);
   expect(screen.getByText('GESAMTWERT')).toBeOnTheScreen();
-
   await act(async () => void (handled = onBack?.({} as never)));
-  expect(handled).toBe(false); // Portfolio is a root screen: Android leaves the app
-});
-
-it('lets the receive address wrap anywhere without changing its characters', async () => {
-  await renderApp({ startScreen: 'home' });
-  await tap('Empfangen');
-  const shown = screen.getByText(/^0/).props.children as string;
-  expect(shown).toContain('\u200B');
-  expect(shown.replaceAll('\u200B', '').replaceAll(' ', '')).toBe('0xB4a27C1e9D3f58A0b6E2c4D8f1A3e5C7b9D09Fc1');
+  expect(handled).toBe(false);
+  jest.restoreAllMocks();
 });

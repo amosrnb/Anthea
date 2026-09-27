@@ -1,5 +1,5 @@
 import { ADDR, POISON, RECENT } from '../data';
-import { chart, famOf, nf, pc, qrCells, short, shuffled, validateAddress } from '../lib';
+import { chart, famOf, nf, pc, qrMatrix, short, shuffled, validateAddress } from '../lib';
 
 describe('formatting', () => {
   it('formats numbers in de-DE with fixed decimals', () => {
@@ -36,12 +36,14 @@ describe('chart', () => {
   });
 });
 
-describe('qrCells', () => {
-  it('returns a 29×29 matrix with finder patterns', () => {
-    const cells = qrCells(ADDR.evm);
-    expect(cells).toHaveLength(29 * 29);
-    expect(cells[0]).toBe('#000000');
-    expect(cells[28]).toBe('#000000');
+describe('qrMatrix', () => {
+  it('encodes a real QR code with high error correction and finder patterns', () => {
+    const { size, cells } = qrMatrix(ADDR.evm);
+    expect(cells).toHaveLength(size * size);
+    expect(size).toBeGreaterThanOrEqual(33); // 42 characters at level H need version 4+
+    // Top-left finder pattern: dark 7×7 border.
+    for (let i = 0; i < 7; i++) expect(cells[i]).toBe(true);
+    expect(cells[size + 1]).toBe(false);
   });
 });
 

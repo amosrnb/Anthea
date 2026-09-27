@@ -3,6 +3,7 @@ import { Animated, Easing, StyleSheet, TextInput, View } from 'react-native';
 import { ACC, IND } from '../data';
 import { BackButton, BigBtn, Blurred, Btn, Cta, DIM, f, Grid, Header, MUTED, nativeDriver, Overline, p, PrimaryCta, Screen, TEXTAREA, TNUM, Txt } from '../ui';
 import { Icon, LockIcon } from '../ui/icons';
+import { PHRASE_BADGES } from '../platform/screenCapture';
 import type { Wallet } from '../useWallet';
 
 const StepHeader = ({ w, label }: { w: Wallet; label: string }) => (
@@ -119,7 +120,7 @@ export function WordGrid({ words, cell, cellBg, hidden = false }: { words: Walle
           {hidden ? (
             <View style={styles.wordPlaceholder} />
           ) : (
-            <Txt selectable={false} style={f(900, 15.5)}>
+            <Txt selectable={false} testID={`phrase-word-${s.n}`} style={f(900, 15.5)}>
               {s.w}
             </Txt>
           )}
@@ -134,8 +135,8 @@ export function Seed({ w }: { w: Wallet }) {
       <StepHeader w={w} label="Schritt 2 von 4" />
       <Intro title="Deine Wiederherstellungsphrase" lead="Schreibe die Wörter in dieser Reihenfolge auf Papier. Nicht fotografieren, nicht in die Cloud." />
       <View style={[{ flexDirection: 'row', gap: 6 }, p(16, 22, 0)]}>
-        <Badge>Screenshots blockiert</Badge>
-        <Badge>Kopieren deaktiviert</Badge>
+        <Badge>{PHRASE_BADGES[0]}</Badge>
+        <Badge>{PHRASE_BADGES[1]}</Badge>
       </View>
       <Btn onPress={w.revealSeed} label={w.seedShown ? undefined : 'Zum Anzeigen tippen'} style={styles.seedBox}>
         <Blurred on={!w.seedShown} radius={9}>
@@ -162,9 +163,11 @@ export function Verify({ w }: { w: Wallet }) {
       <StepHeader w={w} label="Schritt 3 von 4" />
       <Intro title="Kurz prüfen" lead="Wähle das richtige Wort für jede Position." />
       <View style={[{ gap: 18 }, p(24, 22, 0)]}>
-        {w.verifyRows.map((v) => (
+        {w.verifyRows.map((v, row) => (
           <View key={v.pos}>
-            <Overline style={f(800, 12)}>WORT #{v.pos}</Overline>
+            <Overline style={f(800, 12)} testID={`verify-row-${row}`}>
+              {'WORT #' + v.pos}
+            </Overline>
             <Grid cols={3} colGap={8} style={{ marginTop: 10 }}>
               {v.opts.map((o) => (
                 <Btn key={o.w} onPress={o.onClick} style={[styles.option, { backgroundColor: o.bg }]}>
@@ -212,9 +215,6 @@ export function Import({ w }: { w: Wallet }) {
         />
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6 }}>
           <Txt style={[f(800, 12.5), { color: w.importInk, flexShrink: 1 }]}>{w.importMsg}</Txt>
-          <Btn onPress={w.importDemo}>
-            <Txt style={[f(800, 12.5), { color: ACC }]}>Testphrase</Txt>
-          </Btn>
         </View>
       </View>
       <View style={[{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }, p(12, 16, 0)]}>
@@ -244,8 +244,11 @@ export function PinPad({
   rowGap,
   style,
   testIDPrefix,
+  disabled = false,
 }: {
   keys: Wallet['pinKeys'];
+  /** While PIN entry is blocked after too many wrong PINs (BUILD_PLAN 5.3). */
+  disabled?: boolean;
   /** Test IDs `<prefix>-0`…`<prefix>-9` for the digit keys (E2E tests). */
   testIDPrefix: string;
   keyHeight: number;
@@ -254,7 +257,7 @@ export function PinPad({
   style?: object;
 }) {
   return (
-    <Grid cols={3} colGap={22} rowGap={rowGap} style={style}>
+    <Grid cols={3} colGap={22} rowGap={rowGap} style={[style, disabled && { opacity: 0.4 }]}>
       {keys.map((k, i) => (
         <Btn
           key={i}
@@ -300,7 +303,15 @@ export function Pin({ w }: { w: Wallet }) {
           {w.pinError}
         </Txt>
       </View>
-      <PinPad keys={w.pinKeys} testIDPrefix="pin-key" keyHeight={66} fontSize={26} rowGap={10} style={[{ marginTop: 'auto' }, p(0, 44, 40)]} />
+      <PinPad
+        keys={w.pinKeys}
+        disabled={w.pinLocked}
+        testIDPrefix="pin-key"
+        keyHeight={66}
+        fontSize={26}
+        rowGap={10}
+        style={[{ marginTop: 'auto' }, p(0, 44, 40)]}
+      />
     </Screen>
   );
 }

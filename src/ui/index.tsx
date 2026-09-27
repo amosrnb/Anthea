@@ -152,8 +152,10 @@ export function Header({ onBack, style, children }: { onBack: () => void; style?
 
 export const HeaderTitle = ({ children }: { children: ReactNode }) => <Txt style={[f(900, 20), { letterSpacing: -0.4 }]}>{children}</Txt>;
 
-export const Overline = ({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) => (
-  <Txt style={[f(800, 11), { letterSpacing: 1.2, color: MUTED }, style]}>{children}</Txt>
+export const Overline = ({ children, style, testID }: { children: ReactNode; style?: StyleProp<TextStyle>; testID?: string }) => (
+  <Txt testID={testID} style={[f(800, 11), { letterSpacing: 1.2, color: MUTED }, style]}>
+    {children}
+  </Txt>
 );
 
 /** Token/coin avatar: rounded square with a letter mark. */
