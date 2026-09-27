@@ -1,5 +1,5 @@
 import { ADDR, POISON, RECENT } from '../data';
-import { chart, famOf, nf, pc, qrCells, short, validateAddress } from '../lib';
+import { chart, famOf, nf, pc, qrCells, short, shuffled, validateAddress } from '../lib';
 
 describe('formatting', () => {
   it('formats numbers in de-DE with fixed decimals', () => {
@@ -74,5 +74,20 @@ describe('validateAddress', () => {
 
   it('flags first-time recipients', () => {
     expect(validateAddress('0x' + 'a'.repeat(40), 'evm', 'ETH', 'Ethereum')?.kind).toBe('info');
+  });
+});
+
+describe('shuffled', () => {
+  it('returns a permutation without touching the input', () => {
+    const input = ['a', 'b', 'c'];
+    const out = shuffled(input, () => 0);
+    expect(out).toEqual(['b', 'c', 'a']);
+    expect(input).toEqual(['a', 'b', 'c']);
+  });
+
+  it('produces every order of three items', () => {
+    const seen = new Set<string>();
+    for (let k = 0; k < 400; k++) seen.add(shuffled(['a', 'b', 'c']).join(''));
+    expect(seen.size).toBe(6);
   });
 });

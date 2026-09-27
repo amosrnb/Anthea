@@ -26,7 +26,7 @@ import {
   type Asset,
   type Currency,
 } from './data';
-import { chart, famOf, nf, pc, qrCells, short, validateAddress } from './lib';
+import { chart, famOf, nf, pc, qrCells, short, shuffled, validateAddress } from './lib';
 import { Icon, StarIcon } from './ui/icons';
 
 export type Screen =
@@ -85,6 +85,8 @@ interface State {
   checks: boolean[];
   seedShown: boolean;
   picks: Record<number, string>;
+  /** Display order of the three options per verification row, shuffled each time the verify step opens. */
+  verifyOpts: string[][];
   importText: string;
   pin: string;
   pinFirst: string;
@@ -140,6 +142,7 @@ function initialState(start: WalletProps['startScreen']): State {
     checks: [false, false, false],
     seedShown: false,
     picks: {},
+    verifyOpts: VERIFY.map((v) => v.opts),
     importText: '',
     pin: '',
     pinFirst: '',
@@ -380,9 +383,9 @@ export function useWallet(P: WalletProps) {
   }));
   const warnOk = S.checks.every(Boolean);
   const seedWords = SEED.map((w, i) => ({ n: i + 1, w }));
-  const verifyRows = VERIFY.map((v) => ({
+  const verifyRows = VERIFY.map((v, row) => ({
     pos: v.pos,
-    opts: v.opts.map((w) => {
+    opts: (S.verifyOpts[row] ?? v.opts).map((w) => {
       const picked = S.picks[v.pos] === w,
         right = SEED[v.pos - 1] === w;
       return {
@@ -651,7 +654,7 @@ export function useWallet(P: WalletProps) {
     seedWords,
     seedShown: S.seedShown,
     revealSeed: set({ seedShown: true }),
-    seedNext: () => S.seedShown && setState({ screen: 'verify', picks: {} }),
+    seedNext: () => S.seedShown && setState({ screen: 'verify', picks: {}, verifyOpts: VERIFY.map((v) => shuffled(v.opts)) }),
     verifyRows,
     verifyOk,
     verifyNext: () => verifyOk && setState({ screen: 'pin', pinMode: 'set', pin: '', pinFirst: '', pinError: '' }),

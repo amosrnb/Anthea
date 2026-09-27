@@ -105,15 +105,24 @@ const Badge = ({ children }: { children: string }) => (
   </View>
 );
 
-export function WordGrid({ words, cell, cellBg }: { words: Wallet['seedWords']; cell: number; cellBg: string }) {
+/**
+ * Seed words in a 2-column grid. While `hidden`, the words are not rendered at all, only same-width placeholders:
+ * a blur alone is not reliable on every platform (Android falls back to a tint) and would leave the words in the
+ * view tree for screenshots and accessibility services.
+ */
+export function WordGrid({ words, cell, cellBg, hidden = false }: { words: Wallet['seedWords']; cell: number; cellBg: string; hidden?: boolean }) {
   return (
     <Grid cols={2} colGap={8} rowGap={8}>
       {words.map((s) => (
         <View key={s.n} style={[styles.word, p(cell, 12), { backgroundColor: cellBg }]}>
           <Txt style={[f(800, 12), { width: 18, color: DIM }, TNUM]}>{s.n}</Txt>
-          <Txt selectable={false} style={f(900, 15.5)}>
-            {s.w}
-          </Txt>
+          {hidden ? (
+            <View style={styles.wordPlaceholder} />
+          ) : (
+            <Txt selectable={false} style={f(900, 15.5)}>
+              {s.w}
+            </Txt>
+          )}
         </View>
       ))}
     </Grid>
@@ -130,7 +139,7 @@ export function Seed({ w }: { w: Wallet }) {
       </View>
       <Btn onPress={w.revealSeed} label={w.seedShown ? undefined : 'Zum Anzeigen tippen'} style={styles.seedBox}>
         <Blurred on={!w.seedShown} radius={9}>
-          <WordGrid words={w.seedWords} cell={10} cellBg="#1E1E23" />
+          <WordGrid words={w.seedWords} cell={10} cellBg="#1E1E23" hidden={!w.seedShown} />
         </Blurred>
         {!w.seedShown && (
           <View style={[StyleSheet.absoluteFill, styles.center]}>
@@ -252,7 +261,7 @@ export function PinPad({
           onPress={k.onClick}
           label={k.label || (k.icon ? 'Löschen' : undefined)}
           testID={k.label ? `${testIDPrefix}-${k.label}` : undefined}
-          style={[styles.pinKey, { height: keyHeight, backgroundColor: k.bg }]}
+          style={[styles.pinKey, { width: keyHeight, height: keyHeight, borderRadius: keyHeight / 2, backgroundColor: k.bg }]}
           activeStyle={{ backgroundColor: '#2A2A32' }}
         >
           {k.label ? <Txt style={[f(900, fontSize), TNUM]}>{k.label}</Txt> : k.icon}
@@ -304,5 +313,8 @@ const styles = StyleSheet.create({
   word: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14 },
   option: { height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   input: TEXTAREA,
-  pinKey: { borderRadius: '50%', alignItems: 'center', justifyContent: 'center' },
+  // Round keys (product owner decision after Phase 0; the prototype stretched them to ovals).
+  pinKey: { alignSelf: 'center', alignItems: 'center', justifyContent: 'center' },
+  // Height of one line of 15.5 pt Nunito, so the hidden grid has the same size as the revealed one.
+  wordPlaceholder: { width: 64, height: 12, marginVertical: (15.5 * 1.364 - 12) / 2, borderRadius: 6, backgroundColor: 'rgba(247,247,245,.28)' },
 });

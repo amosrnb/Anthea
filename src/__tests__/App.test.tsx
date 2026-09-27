@@ -27,7 +27,9 @@ it('onboards a new wallet through the prototype click path', async () => {
   await tap('Wörter anzeigen');
 
   expect(screen.getByText('Deine Wiederherstellungsphrase')).toBeOnTheScreen();
+  for (const word of SEED) expect(screen.queryByText(word)).toBeNull(); // hidden words are not rendered at all
   await tap('Zum Anzeigen tippen');
+  for (const word of SEED) expect(screen.getByText(word)).toBeOnTheScreen();
   await tap('Ich habe sie notiert');
   await tap(SEED[2]!);
   await tap(SEED[6]!);
@@ -122,4 +124,12 @@ it('handles the Android back button: back within flows, exit on root screens', a
 
   await act(async () => void (handled = onBack?.({} as never)));
   expect(handled).toBe(false); // Portfolio is a root screen: Android leaves the app
+});
+
+it('lets the receive address wrap anywhere without changing its characters', async () => {
+  await renderApp({ startScreen: 'home' });
+  await tap('Empfangen');
+  const shown = screen.getByText(/^0/).props.children as string;
+  expect(shown).toContain('\u200B');
+  expect(shown.replaceAll('\u200B', '').replaceAll(' ', '')).toBe('0xB4a27C1e9D3f58A0b6E2c4D8f1A3e5C7b9D09Fc1');
 });

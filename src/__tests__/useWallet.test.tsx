@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { SEED } from '../data';
+import { SEED, VERIFY } from '../data';
 import { useWallet, type WalletProps } from '../useWallet';
 
 const setup = (props: Partial<WalletProps> = {}) => renderHook(() => useWallet({ startScreen: 'welcome', testnet: true, privacyMode: false, ...props }));
@@ -52,6 +52,25 @@ describe('onboarding', () => {
     await typePin(h, '135790');
     expect(h.result.current.screen).toBe('home');
     expect(h.result.current.toast).toBe('Wallet bereit');
+  });
+
+  it('shuffles the verification options each time the step opens', async () => {
+    const h = await setup();
+    await press(h, (w) => w.startCreate());
+    await press(h, (w) => w.revealSeed());
+    const positions = new Set<string>();
+    for (let k = 0; k < 30; k++) {
+      await press(h, (w) => w.seedNext());
+      const rows = h.result.current.verifyRows;
+      for (const row of rows)
+        expect(row.opts.map((o) => o.w).sort()).toEqual(
+          VERIFY.find((v) => v.pos === row.pos)!
+            .opts.slice()
+            .sort(),
+        );
+      positions.add(rows.map((r) => r.opts.findIndex((o) => o.w === SEED[r.pos - 1])).join(''));
+    }
+    expect(positions.size).toBeGreaterThan(1);
   });
 
   it('restarts PIN setup when the confirmation differs', async () => {
