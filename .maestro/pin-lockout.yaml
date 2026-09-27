@@ -1,0 +1,48 @@
+# Phase 2 acceptance: after 5 wrong PINs the wait applies and survives an app restart (BUILD_PLAN 5.3).
+appId: dev.anthea.wallet
+tags:
+  - phase-2
+---
+- runFlow: onboarding.yaml
+- tapOn: 'Sperren'
+- assertVisible: 'Anthea ist gesperrt'
+# Each attempt runs the KDF; the keypad ignores input meanwhile, so wait for the exact result every time.
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '000000'
+- extendedWaitUntil:
+    visible: 'Falsche PIN. Noch 4 Versuche.'
+    timeout: 20000
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '000000'
+- extendedWaitUntil:
+    visible: 'Falsche PIN. Noch 3 Versuche.'
+    timeout: 20000
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '000000'
+- extendedWaitUntil:
+    visible: 'Falsche PIN. Noch 2 Versuche.'
+    timeout: 20000
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '000000'
+- extendedWaitUntil:
+    visible: 'Falsche PIN. Noch 1 Versuch.'
+    timeout: 20000
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '000000'
+- extendedWaitUntil:
+    visible: 'Zu viele Versuche.*'
+    timeout: 20000
+- stopApp
+- launchApp
+- assertVisible: 'Anthea ist gesperrt'
+- assertVisible: 'Zu viele Versuche.*'

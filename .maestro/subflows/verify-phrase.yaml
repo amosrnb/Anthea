@@ -1,0 +1,15 @@
+# Answers the three "Kurz prüfen" rows with the words from read-phrase.yaml (positions and option order are random).
+appId: dev.anthea.wallet
+---
+- copyTextFrom:
+    id: verify-row-0
+- evalScript: ${output.pick = output['w' + maestro.copiedText.replace(/\D/g, '')]}
+- tapOn: ${output.pick}
+- copyTextFrom:
+    id: verify-row-1
+- evalScript: ${output.pick = output['w' + maestro.copiedText.replace(/\D/g, '')]}
+- tapOn: ${output.pick}
+- copyTextFrom:
+    id: verify-row-2
+- evalScript: ${output.pick = output['w' + maestro.copiedText.replace(/\D/g, '')]}
+- tapOn: ${output.pick}

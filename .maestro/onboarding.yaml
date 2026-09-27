@@ -1,10 +1,11 @@
-# Create a wallet through the prototype click path (mock data, Phase 0).
+# Creates a wallet with a real random phrase (Phase 2). Leaves the words in output.w1 … output.w12.
 appId: dev.anthea.wallet
 tags:
   - onboarding
 ---
 - launchApp:
     clearState: true
+    clearKeychain: true
 - assertVisible: 'Deine Schlüssel. Dein Gerät.'
 - tapOn: 'Neues Wallet erstellen'
 - assertVisible: 'Bevor es losgeht'
@@ -13,13 +14,14 @@ tags:
 - tapOn: 'Ich bewahre sie offline und sicher auf.'
 - tapOn: 'Wörter anzeigen'
 - assertVisible: 'Deine Wiederherstellungsphrase'
+# Hidden words are not rendered at all (decision 2026-09-27)
+- assertNotVisible:
+    id: phrase-word-1
 - tapOn: 'Zum Anzeigen tippen'
+- runFlow: subflows/read-phrase.yaml
 - tapOn: 'Ich habe sie notiert'
 - assertVisible: 'Kurz prüfen'
-# Mock seed (prototype): #3 harbor, #7 lemon, #11 pepper
-- tapOn: 'harbor'
-- tapOn: 'lemon'
-- tapOn: 'pepper'
+- runFlow: subflows/verify-phrase.yaml
 - tapOn: 'Weiter'
 - assertVisible: 'PIN festlegen'
 - runFlow:
@@ -31,5 +33,6 @@ tags:
     file: subflows/enter-pin.yaml
     env:
       PIN: '123456'
-- assertVisible: 'GESAMTWERT'
-- assertVisible: 'Wallet bereit'
+- extendedWaitUntil:
+    visible: 'GESAMTWERT'
+    timeout: 20000

@@ -1,0 +1,68 @@
+# Phase 2 acceptance: create → lock → restart (locked) → unlock → reveal → reset → import the same phrase → same
+# addresses (BUILD_PLAN Phase 2).
+appId: dev.anthea.wallet
+tags:
+  - phase-2
+---
+- runFlow: onboarding.yaml
+- runFlow: subflows/receive-address.yaml
+- evalScript: ${output.created = output.address}
+# Lock from the portfolio
+- tapOn: 'Sperren'
+- assertVisible: 'Anthea ist gesperrt'
+# A restart keeps the wallet locked
+- stopApp
+- launchApp
+- assertVisible: 'Anthea ist gesperrt'
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '123456'
+- extendedWaitUntil:
+    visible: 'GESAMTWERT'
+    timeout: 20000
+# Reveal shows the same phrase (PIN required)
+- tapOn: 'Einstellungen'
+- tapOn: 'Wiederherstellungsphrase anzeigen'
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '123456'
+- extendedWaitUntil:
+    visible:
+      id: phrase-word-12
+    timeout: 20000
+- copyTextFrom:
+    id: phrase-word-1
+- assertTrue: ${maestro.copiedText.trim() == output.w1}
+- copyTextFrom:
+    id: phrase-word-12
+- assertTrue: ${maestro.copiedText.trim() == output.w12}
+- tapOn: 'Fertig'
+# Reset deletes everything
+- scrollUntilVisible:
+    element: 'Wallet zurücksetzen'
+- tapOn: 'Wallet zurücksetzen'
+- tapOn: 'Ich habe meine Phrase gesichert'
+- tapOn: 'Endgültig zurücksetzen'
+- assertVisible: 'Deine Schlüssel. Dein Gerät.'
+# Import the same phrase
+- tapOn: 'Bestehendes Wallet importieren'
+- tapOn: 'Wiederherstellungsphrase'
+- inputText: ${[output.w1, output.w2, output.w3, output.w4, output.w5, output.w6, output.w7, output.w8, output.w9, output.w10, output.w11, output.w12].join(' ')}
+- assertVisible: 'Prüfsumme gültig'
+- tapOn: 'Importieren'
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '654321'
+- assertVisible: 'PIN bestätigen'
+- runFlow:
+    file: subflows/enter-pin.yaml
+    env:
+      PIN: '654321'
+- extendedWaitUntil:
+    visible: 'GESAMTWERT'
+    timeout: 60000
+- runFlow: subflows/receive-address.yaml
+- assertTrue: ${output.address == output.created}

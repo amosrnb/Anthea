@@ -1,0 +1,8 @@
+# Opens "Empfangen" from the portfolio and stores the shown address in output.address.
+appId: dev.anthea.wallet
+---
+- tapOn: 'Empfangen'
+- copyTextFrom:
+    id: receive-address
+- evalScript: ${output.address = maestro.copiedText.replace(/\s/g, '')}
+- back
